@@ -1,0 +1,45 @@
+{
+  "name": "scsi-academy-backend",
+  "version": "1.0.0",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:migrate": "tsx src/config/migrate.ts",
+    "db:migrate-paywall": "tsx src/config/migrate-paywall.ts",
+    "db:migrate-v2": "tsx src/config/migrate-v2.ts",
+    "db:migrate:all": "tsx src/config/migrate.ts && tsx src/config/migrate-paywall.ts && tsx src/config/migrate-v2.ts && tsx src/config/migrate-v3.ts && tsx src/config/migrate-v4.ts",
+    "hash-password": "tsx src/utils/hashPassword.ts",
+    "db:migrate-v3": "tsx src/config/migrate-v3.ts",
+    "db:migrate-v4": "tsx src/config/migrate-v4.ts"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.5",
+    "@types/nodemailer": "^6.4.17",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

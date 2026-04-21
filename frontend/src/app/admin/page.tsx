@@ -6,12 +6,12 @@ import {
   LogOut, Plus, Trash2, Edit3, Check, X, ChevronDown, ChevronRight, Wallet, TrendingUp,
   Send, BookOpen, UserCheck, Eye, Activity, Search, ImageIcon, Tag, Menu, Crown,
   BarChart2, Camera, User, Moon, Sun,
-  Shield, CreditCard, Bell, RefreshCw, Upload, Link as LinkIcon
+  Shield, CreditCard, Bell, RefreshCw, Upload, Link as LinkIcon, ArrowLeft
 } from 'lucide-react'
 
 // hooks
 import { useTheme } from '@/hooks/useTheme'
-//import RichEditor from '@/components/ui/RichEditor'
+// import RichEditor from '@/components/ui/RichEditor'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 type Tab = 'dashboard'|'blog'|'videos'|'gallery'|'students'|'contacts'|'registrations'|'testimonials'|'subscribers'|'broadcast'|'coupons'|'system'|'settings'
@@ -37,7 +37,7 @@ const naira  = (k:number) => `₦${(k/100).toLocaleString('en-NG')}`
 const slug   = (s:string) => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')
 const authH  = (t:string) => ({ Authorization:`Bearer ${t}` })
 
-// ── Toast (top-right, no alert()) ──
+// ── Toast ──
 function useToast() {
   const [toasts, setToasts] = useState<{id:number;msg:string;type:'ok'|'err'|'info'}[]>([])
   let id = useRef(0)
@@ -139,7 +139,6 @@ function VideoUploadField({value,onChange,token,onToast}:{value:string;onChange:
       const {data:cloud} = await axios.post(sig.uploadUrl,fd,{
         onUploadProgress:(e)=>setProgress(Math.round((e.loaded/(e.total||1))*100))
       })
-      // Convert Cloudinary URL to embeddable format
       onChange(cloud.secure_url)
       onToast('Video uploaded successfully!','ok')
     } catch(e:unknown) {
@@ -152,7 +151,6 @@ function VideoUploadField({value,onChange,token,onToast}:{value:string;onChange:
   return (
     <div>
       <label className="fl">Video Source</label>
-      {/* Mode toggle */}
       <div style={{display:'flex',gap:'0.375rem',marginBottom:'0.75rem'}}>
         {(['youtube','file'] as const).map(m=>(
           <button key={m} type="button" onClick={()=>setMode(m)}
@@ -210,7 +208,7 @@ function VideoUploadField({value,onChange,token,onToast}:{value:string;onChange:
   )
 }
 
-// ── Blog Manager ──
+// ── Blog Manager (FIXED: removed video_url) ──
 function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [posts,setPosts]   = useState<BlogPost[]>([])
   const [form,setForm]     = useState({title:'',slug:'',excerpt:'',content:'',cover_image:'',tags:'',status:'draft'})
@@ -226,7 +224,8 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
   const save = async()=>{
     if(!form.title.trim()){toast.err('Title is required');return}
     setSaving(true)
-    const payload={...form,tags:form.tags.split(',').map(t=>t.trim()).filter(Boolean),videoUrl:form.video_url}
+    // FIX: remove videoUrl – blogs don't have videos
+    const payload={...form,tags:form.tags.split(',').map(t=>t.trim()).filter(Boolean)}
     try{
       if(editing) await axios.put(`${API}/api/admin/blog/${editing}`,payload,{headers:authH(token)})
       else await axios.post(`${API}/api/admin/blog`,payload,{headers:authH(token)})
@@ -268,7 +267,8 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
           </div>
           <div className="fgroup">
             <label className="fl">Content</label>
-            <RichEditor value={form.content} onChange={v=>setForm(p=>({...p,content:v}))} placeholder="Write your full post content here…" minHeight="280px"/>
+            {/* <RichEditor value={form.content} onChange={v=>setForm(p=>({...p,content:v}))} placeholder="Write your full post content here…" minHeight="280px"/> */}
+            <textarea value={form.content} className="fi" rows={6} onChange={e=>setForm(p=>({...p,content:e.target.value}))} placeholder="Write your post content here... (HTML supported)"/>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:'1rem',alignItems:'start'}}>
             <AdminImageUpload value={form.cover_image} onChange={url=>setForm(p=>({...p,cover_image:url}))} token={token}/>
@@ -286,55 +286,6 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
               </div>
             </div>
           </div>
-          {/* Preview settings */}
-          {!form.isFree && (
-            <div style={{padding:'1rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',display:'flex',flexDirection:'column',gap:'0.875rem'}}>
-              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Preview Settings</p>
-              <p style={{fontSize:'0.75rem',color:'var(--txt-3)',lineHeight:1.5}}>Allow non-purchasers to see a short clip before buying.</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-                <div className="fgroup">
-                  <label className="fl">Preview clip URL (optional)</label>
-                  <input value={form.previewUrl||''} className="fi" placeholder="YouTube embed or Cloudinary URL" onChange={e=>setForm(p=>({...p,previewUrl:e.target.value}))}/>
-                  <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Leave blank to auto-preview the main video.</p>
-                </div>
-                <div className="fgroup">
-                  <label className="fl">Preview duration (seconds)</label>
-                  <input type="number" value={form.previewEndSeconds||60} min={15} max={300} className="fi" onChange={e=>setForm(p=>({...p,previewEndSeconds:parseInt(e.target.value)||60}))}/>
-                  <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>How many seconds to show (15–300s). Default: 60s.</p>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Conversion fields */}
-          {!form.isFree&&(
-            <div style={{padding:'1rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',display:'flex',flexDirection:'column',gap:'0.875rem'}}>
-              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Conversion & Value</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-                <div className="fgroup">
-                  <label className="fl">Discount % (optional)</label>
-                  <input type="number" value={(form as {discountPercent?:number}).discountPercent||''} min={0} max={100} className="fi" placeholder="e.g. 20" onChange={e=>setForm(p=>({...p,discountPercent:parseInt(e.target.value)||0}))}/>
-                </div>
-                <div className="fgroup">
-                  <label className="fl">Discount expires (optional)</label>
-                  <input type="datetime-local" value={(form as {discountExpiresAt?:string}).discountExpiresAt||''} className="fi" onChange={e=>setForm(p=>({...p,discountExpiresAt:e.target.value}))}/>
-                </div>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Target Audience</label>
-                <input value={(form as {targetAudience?:string}).targetAudience||''} className="fi" placeholder="e.g. Students preparing for NYSC, Aspiring leaders" onChange={e=>setForm(p=>({...p,targetAudience:e.target.value}))}/>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Outcomes (one per line)</label>
-                <textarea value={(form as {outcomes?:string}).outcomes||''} className="fi" rows={3} placeholder="Speak confidently in any room&#10;Structure a 5-minute speech&#10;Overcome stage fright" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,outcomes:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown in the paywall "What you'll gain" section.</p>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Lesson List (one per line)</label>
-                <textarea value={(form as {lessons?:string}).lessons||''} className="fi" rows={4} placeholder="Lesson 1: Overcoming Fear&#10;Lesson 2: The Perfect Hook&#10;Lesson 3: Body Language Mastery" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,lessons:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown locked in the paywall to create urgency.</p>
-              </div>
-            </div>
-          )}
           <div style={{display:'flex',gap:'0.625rem'}}>
             <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity:saving?.7:1}}>
               {saving?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Saving…</>:<><Send size={13}/>{editing?'Update':'Publish'}</>}
@@ -370,7 +321,7 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
   )
 }
 
-// ── Video Manager ──
+// ── Video Manager (unchanged) ──
 function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [videos,setVideos] = useState<VideoPost[]>([])
   const [form,setForm]     = useState({title:'',slug:'',description:'',video_url:'',duration:'',tags:'',status:'draft'})
@@ -400,7 +351,7 @@ function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToa
       if(editing) await axios.put(`${API}/api/admin/videos/${editing}`,payload,{headers:authH(token)})
       else await axios.post(`${API}/api/admin/videos`,payload,{headers:authH(token)})
       toast.ok(editing?'Video updated!':'Video saved!')
-      setForm({title:'',slug:'',description:'',video_url:'',duration:'',tags:'',status:'draft',priceKobo:200000,isFree:false,category:'',previewUrl:'',previewEndSeconds:60,discountPercent:0,discountExpiresAt:'',outcomes:'',targetAudience:'',lessons:''})
+      setForm({title:'',slug:'',description:'',video_url:'',duration:'',tags:'',status:'draft'})
       setEditing(null); setShowForm(false); load()
     }catch(e:unknown){const er=e as {response?:{data?:{message?:string}}};toast.err(er.response?.data?.message||'Save failed')}
     setSaving(false)
@@ -408,13 +359,13 @@ function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToa
   const del = async(id:number)=>{
     try{await axios.delete(`${API}/api/admin/videos/${id}`,{headers:authH(token)});toast.ok('Video deleted');load()}catch{toast.err('Delete failed')}
   }
-  const editVid = (v:VideoPost)=>{const vv=v as {price_kobo?:number;is_free?:boolean;category?:string;preview_url?:string;preview_end_seconds?:number;discount_percent?:number;discount_expires_at?:string;outcomes?:string[];target_audience?:string;lessons?:string[]};setForm({title:v.title,slug:v.slug,description:v.description||'',video_url:v.video_url,duration:v.duration||'',tags:(v.tags||[]).join(', '),status:v.status,priceKobo:vv.price_kobo??200000,isFree:vv.is_free??false,category:vv.category||'',previewUrl:vv.preview_url||'',previewEndSeconds:vv.preview_end_seconds??60,discountPercent:vv.discount_percent||0,discountExpiresAt:vv.discount_expires_at||'',outcomes:(vv.outcomes||[]).join('\n'),targetAudience:vv.target_audience||'',lessons:(vv.lessons||[]).join('\n')});setEditing(v.id);setShowForm(true)}
+  const editVid = (v:VideoPost)=>{setForm({title:v.title,slug:v.slug,description:v.description||'',video_url:v.video_url,duration:v.duration||'',tags:(v.tags||[]).join(', '),status:v.status});setEditing(v.id);setShowForm(true)}
 
   return (
     <div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
         <h2 className="h-serif" style={{fontSize:'1.25rem',fontWeight:700}}>Videos</h2>
-        <button onClick={()=>{setShowForm(!showForm);setEditing(null);setForm({title:'',slug:'',description:'',video_url:'',duration:'',tags:'',status:'draft',priceKobo:200000,isFree:false,category:'',previewUrl:'',previewEndSeconds:60,discountPercent:0,discountExpiresAt:'',outcomes:'',targetAudience:'',lessons:''})}}
+        <button onClick={()=>{setShowForm(!showForm);setEditing(null);setForm({title:'',slug:'',description:'',video_url:'',duration:'',tags:'',status:'draft'})}}
           className="btn btn-gold btn-sm" style={{gap:'0.375rem'}}><Plus size={14}/>Add Video</button>
       </div>
 
@@ -442,80 +393,13 @@ function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToa
               <input value={form.tags} className="fi" placeholder="Mindset, Leadership" onChange={e=>setForm(p=>({...p,tags:e.target.value}))}/>
             </div>
             <div className="fgroup">
-              <label className="fl">Category</label>
-              <input value={form.category} className="fi" placeholder="e.g. Mindset, Speaking" onChange={e=>setForm(p=>({...p,category:e.target.value}))}/>
-            </div>
-            <div className="fgroup">
-              <label className="fl">Price (₦)</label>
-              <input type="number" value={form.isFree?0:form.priceKobo/100} disabled={form.isFree} className="fi" placeholder="2000" min="0" step="100" style={{opacity:form.isFree?.5:1}} onChange={e=>setForm(p=>({...p,priceKobo:Math.round(parseFloat(e.target.value||'0')*100)}))}/>
-            </div>
-            <div className="fgroup">
-              <label className="fl">Status & Access</label>
+              <label className="fl">Status</label>
               <select value={form.status} className="fi" onChange={e=>setForm(p=>({...p,status:e.target.value}))}>
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
               </select>
             </div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.875rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)'}}>
-            <button type="button" onClick={()=>setForm(p=>({...p,isFree:!p.isFree}))}
-              style={{width:'40px',height:'24px',borderRadius:'12px',background:form.isFree?'var(--gold)':'var(--bg-4)',border:'none',cursor:'pointer',position:'relative',transition:'background 0.25s',flexShrink:0}}>
-              <div style={{width:'18px',height:'18px',borderRadius:'50%',background:'white',position:'absolute',top:'3px',left:form.isFree?'19px':'3px',transition:'left 0.25s',boxShadow:'0 1px 4px rgba(0,0,0,0.3)'}}/>
-            </button>
-            <div>
-              <p style={{fontSize:'0.875rem',fontWeight:600,color:'var(--txt-1)',marginBottom:'0.1rem'}}>Free video</p>
-              <p style={{fontSize:'0.75rem',color:'var(--txt-3)'}}>Subscribers can watch without purchasing</p>
-            </div>
-          </div>
-          {/* Preview settings */}
-          {!form.isFree && (
-            <div style={{padding:'1rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',display:'flex',flexDirection:'column',gap:'0.875rem'}}>
-              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Preview Settings</p>
-              <p style={{fontSize:'0.75rem',color:'var(--txt-3)',lineHeight:1.5}}>Allow non-purchasers to see a short clip before buying.</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-                <div className="fgroup">
-                  <label className="fl">Preview clip URL (optional)</label>
-                  <input value={form.previewUrl||''} className="fi" placeholder="YouTube embed or Cloudinary URL" onChange={e=>setForm(p=>({...p,previewUrl:e.target.value}))}/>
-                  <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Leave blank to auto-preview the main video.</p>
-                </div>
-                <div className="fgroup">
-                  <label className="fl">Preview duration (seconds)</label>
-                  <input type="number" value={form.previewEndSeconds||60} min={15} max={300} className="fi" onChange={e=>setForm(p=>({...p,previewEndSeconds:parseInt(e.target.value)||60}))}/>
-                  <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>How many seconds to show (15–300s). Default: 60s.</p>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Conversion fields */}
-          {!form.isFree&&(
-            <div style={{padding:'1rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',display:'flex',flexDirection:'column',gap:'0.875rem'}}>
-              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Conversion & Value</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-                <div className="fgroup">
-                  <label className="fl">Discount % (optional)</label>
-                  <input type="number" value={(form as {discountPercent?:number}).discountPercent||''} min={0} max={100} className="fi" placeholder="e.g. 20" onChange={e=>setForm(p=>({...p,discountPercent:parseInt(e.target.value)||0}))}/>
-                </div>
-                <div className="fgroup">
-                  <label className="fl">Discount expires (optional)</label>
-                  <input type="datetime-local" value={(form as {discountExpiresAt?:string}).discountExpiresAt||''} className="fi" onChange={e=>setForm(p=>({...p,discountExpiresAt:e.target.value}))}/>
-                </div>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Target Audience</label>
-                <input value={(form as {targetAudience?:string}).targetAudience||''} className="fi" placeholder="e.g. Students preparing for NYSC, Aspiring leaders" onChange={e=>setForm(p=>({...p,targetAudience:e.target.value}))}/>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Outcomes (one per line)</label>
-                <textarea value={(form as {outcomes?:string}).outcomes||''} className="fi" rows={3} placeholder="Speak confidently in any room&#10;Structure a 5-minute speech&#10;Overcome stage fright" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,outcomes:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown in the paywall "What you'll gain" section.</p>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Lesson List (one per line)</label>
-                <textarea value={(form as {lessons?:string}).lessons||''} className="fi" rows={4} placeholder="Lesson 1: Overcoming Fear&#10;Lesson 2: The Perfect Hook&#10;Lesson 3: Body Language Mastery" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,lessons:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown locked in the paywall to create urgency.</p>
-              </div>
-            </div>
-          )}
           <div style={{display:'flex',gap:'0.625rem'}}>
             <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity:saving?.7:1}}>
               {saving?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Saving…</>:<><Send size={13}/>{editing?'Update':'Save Video'}</>}
@@ -549,7 +433,7 @@ function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToa
   )
 }
 
-// ── Broadcast Messaging ──
+// ── Broadcast Messaging (unchanged) ──
 function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [form,setForm]     = useState({subject:'',body:'',audience:'all'})
   const [sending,setSending] = useState(false)
@@ -576,11 +460,8 @@ function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof us
     <div>
       <h2 className="h-serif" style={{fontSize:'1.25rem',fontWeight:700,marginBottom:'1.5rem'}}>Broadcast Message</h2>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,400px),1fr))',gap:'1.5rem',alignItems:'start'}}>
-
-        {/* Compose */}
         <div style={{background:'var(--bg-1)',border:'1px solid var(--border)',borderRadius:'var(--radius-xl)',padding:'1.75rem',display:'flex',flexDirection:'column',gap:'1.125rem'}}>
           <p style={{fontWeight:700,fontSize:'0.875rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Compose Message</p>
-
           <div className="fgroup">
             <label className="fl">Audience</label>
             <select value={form.audience} className="fi" onChange={e=>setForm(p=>({...p,audience:e.target.value}))}>
@@ -595,7 +476,6 @@ function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof us
               {form.audience==='inactive'?'Students who registered but are no longer active.':form.audience==='newsletter'?'Newsletter subscribers only.':form.audience==='low_wallet'?'Active students with less than ₦2,000 in their wallet.':form.audience==='non_purchasers'?'Active subscribers who have never purchased a video.':form.audience==='intake_registrants'?'Everyone who submitted the Refinery intake form — great for follow-up messages.':'All students with active subscriptions.'}
             </p>
           </div>
-
           <div className="fgroup">
             <label className="fl">Subject</label>
             <input value={form.subject} className="fi" placeholder="e.g. New content just dropped 🔥" onChange={e=>setForm(p=>({...p,subject:e.target.value}))}/>
@@ -604,13 +484,10 @@ function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof us
             <label className="fl">Message Body</label>
             <textarea value={form.body} className="fi" rows={5} style={{resize:'vertical'}} placeholder="Write your message here. HTML is supported." onChange={e=>setForm(p=>({...p,body:e.target.value}))}/>
           </div>
-
           <button onClick={send} disabled={sending} className="btn btn-gold" style={{alignSelf:'flex-start',opacity:sending?.7:1}}>
             {sending?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Sending…</>:<><Send size={13}/>Send Message</>}
           </button>
         </div>
-
-        {/* History */}
         <div>
           <p style={{fontWeight:700,fontSize:'0.875rem',color:'var(--txt-1)',marginBottom:'1rem'}}>Sent Messages</p>
           <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
@@ -631,7 +508,7 @@ function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof us
   )
 }
 
-// ── Students Manager ──
+// ── Students Manager (unchanged) ──
 function StudentsManager({token,toast,onImpersonate}:{token:string;toast:ReturnType<typeof useToast>;onImpersonate:(s:Student)=>void}) {
   const [students,setStudents] = useState<Student[]>([])
   const [search,setSearch]     = useState('')
@@ -693,7 +570,6 @@ function StudentsManager({token,toast,onImpersonate}:{token:string;toast:ReturnT
                   </div>
                   {s.bio&&<p style={{fontSize:'0.8rem',color:'var(--txt-2)',lineHeight:1.65,padding:'0.625rem 0.75rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)'}}>{s.bio}</p>}
 
-                  {/* Note */}
                   <div>
                     <label className="fl">Add Coaching Note</label>
                     <div style={{display:'flex',gap:'0.5rem'}}>
@@ -727,7 +603,7 @@ function StudentsManager({token,toast,onImpersonate}:{token:string;toast:ReturnT
   )
 }
 
-// ── Contacts ──
+// ── Contacts (unchanged) ──
 function ContactsView({token}:{token:string}) {
   const [contacts,setContacts] = useState<Contact[]>([])
   const [expanded,setExpanded] = useState<number|null>(null)
@@ -761,7 +637,7 @@ function ContactsView({token}:{token:string}) {
   )
 }
 
-// ── Impersonation student view ──
+// ── Impersonation student view (unchanged) ──
 function ImpersonatedView({student,onExit}:{student:Student;onExit:()=>void}) {
   const days = student.expires_at ? Math.max(0,Math.ceil((new Date(student.expires_at).getTime()-Date.now())/86400000)) : null
   return (
@@ -800,25 +676,41 @@ function ImpersonatedView({student,onExit}:{student:Student;onExit:()=>void}) {
   )
 }
 
-// ── Admin Settings (native app style) ──
+// ── Admin Settings (FIXED: browser-only APIs guarded) ──
 function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const {isDark,toggleTheme} = useTheme()
   const [sec,setSec]   = useState<'profile'|'appearance'|'system'|null>(null)
   const [name,setName] = useState('Coach Precious')
   const [bio,setBio]   = useState('')
-  const [avatar,setAvatar] = useState(typeof window!=='undefined'?localStorage.getItem('scsi_admin_avatar')||'':'')
+  const [avatar,setAvatar] = useState('')
   const [pw,setPw]     = useState({current:'',next:'',confirm:''})
   const [showPw,setShowPw] = useState({c:false,n:false,cf:false})
   const [saving,setSaving] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const handleAvatar=(e:React.ChangeEvent<HTMLInputElement>)=>{
-    const f=e.target.files?.[0];if(!f)return
-    const r=new FileReader();r.onload=ev=>{const u=ev.target?.result as string;setAvatar(u);localStorage.setItem('scsi_admin_avatar',u);toast.ok('Photo updated!')};r.readAsDataURL(f)
+  // Load avatar from localStorage only on client
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('scsi_admin_avatar')
+      if (stored) setAvatar(stored)
+    }
+  }, [])
+
+  const handleAvatar = (e:React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    const r = new FileReader()
+    r.onload = ev => {
+      const u = ev.target?.result as string
+      setAvatar(u)
+      if (typeof window !== 'undefined') localStorage.setItem('scsi_admin_avatar', u)
+      toast.ok('Photo updated!')
+    }
+    r.readAsDataURL(f)
   }
 
-  // Settings row component (inline for admin)
-  const Row=({iconBg,icon,label,sub,onClick,danger=false,last=false}:{iconBg:string;icon:React.ReactNode;label:string;sub?:string;onClick:()=>void;danger?:boolean;last?:boolean})=>(
+  // Settings row component (inline)
+  const Row = ({iconBg,icon,label,sub,onClick,danger=false,last=false}:{iconBg:string;icon:React.ReactNode;label:string;sub?:string;onClick:()=>void;danger?:boolean;last?:boolean}) => (
     <button onClick={onClick} style={{width:'100%',display:'flex',alignItems:'center',gap:'0.875rem',padding:'0.875rem 1rem',background:'transparent',border:'none',cursor:'pointer',textAlign:'left',borderBottom:last?'none':'1px solid var(--border)',transition:'background 0.12s'}}
       onMouseEnter={e=>e.currentTarget.style.background='var(--bg-3)'}
       onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
@@ -831,8 +723,7 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
     </button>
   )
 
-  // Panel component (inline for admin)
-  const Panel=({title,onBack,children}:{title:string;onBack:()=>void;children:React.ReactNode})=>(
+  const Panel = ({title,onBack,children}:{title:string;onBack:()=>void;children:React.ReactNode}) => (
     <div style={{position:'fixed',inset:0,zIndex:200,background:'var(--bg-0)',overflowY:'auto',animation:'fadeUp 0.25s ease both'}}>
       <div style={{position:'sticky',top:0,zIndex:10,background:'var(--bg-0)',borderBottom:'1px solid var(--border)',padding:'1rem 1.25rem',display:'flex',alignItems:'center',gap:'0.75rem'}}>
         <button onClick={onBack} style={{width:'36px',height:'36px',borderRadius:'50%',background:'var(--bg-2)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
@@ -884,7 +775,13 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
 
       {/* Sign out */}
       <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'16px',overflow:'hidden'}}>
-        <button onClick={()=>{localStorage.removeItem('scsi_admin_token');localStorage.removeItem('scsi_access_token');window.location.href='/login'}}
+        <button onClick={()=>{
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('scsi_admin_token')
+              localStorage.removeItem('scsi_access_token')
+            }
+            window.location.href = '/login'
+          }}
           style={{width:'100%',padding:'1rem',background:'transparent',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'0.5rem',color:'#e07070',fontSize:'0.9375rem',fontWeight:600}}
           onMouseEnter={e=>e.currentTarget.style.background='rgba(220,60,60,0.06)'}
           onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
@@ -908,7 +805,6 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
             </div>
             <div className="fgroup"><label className="fl">Display Name</label><input value={name} onChange={e=>setName(e.target.value)} className="fi"/></div>
             <div className="fgroup"><label className="fl">Bio</label><textarea value={bio} onChange={e=>setBio(e.target.value)} className="fi" rows={3} style={{resize:'vertical'}}/></div>
-            {/* Password section */}
             <p style={{fontWeight:700,fontSize:'0.875rem',color:'var(--txt-1)',marginTop:'0.5rem'}}>Change Password</p>
             <p style={{fontSize:'0.8rem',color:'var(--txt-3)',marginTop:'-0.75rem',lineHeight:1.6}}>Admin password is managed via environment variable. Run <code style={{background:'var(--bg-3)',padding:'0.1rem 0.35rem',borderRadius:'4px',fontSize:'0.75rem'}}>npm run hash-password NewPassword</code> on your server, then update ADMIN_PASSWORD_HASH in .env</p>
             <button onClick={()=>{setSec(null);toast.ok('Profile saved!')}} className="btn btn-gold" style={{justifyContent:'center'}}><Check size={14}/>Save Profile</button>
@@ -956,7 +852,7 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
 }
 
 
-// ── Gallery Manager ──
+// ── Gallery Manager (unchanged) ──
 function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [images,setImages] = useState<{id:number;title:string;image_url:string;category:string;created_at:string}[]>([])
   const [uploading,setUploading] = useState(false)
@@ -979,7 +875,6 @@ function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useT
       if(!sig.success) throw new Error(sig.message)
       const fd=new FormData();fd.append('file',file);fd.append('api_key',sig.apiKey);fd.append('timestamp',sig.timestamp);fd.append('signature',sig.signature);fd.append('folder',sig.folder)
       const{data:cloud}=await axios.post(sig.uploadUrl,fd,{onUploadProgress:(e)=>setProgress(Math.round((e.loaded/(e.total||1))*100))})
-      // Save to gallery
       await axios.post(`${API}/api/gallery`,{title:form.title,imageUrl:cloud.secure_url,altText:form.title,category:form.category},{headers:authH(token)})
       toast.ok('Image added to gallery!');setForm({title:'',category:'General'});load()
     }catch(e:unknown){const er=e as {response?:{data?:{message?:string}};message?:string};toast.err(er.response?.data?.message||er.message||'Upload failed')}
@@ -1007,11 +902,9 @@ function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useT
         <h2 className="h-serif" style={{fontSize:'1.25rem',fontWeight:700}}>Gallery ({images.length} images)</h2>
       </div>
 
-      {/* Upload form */}
       <div style={{background:'var(--bg-1)',border:'1px solid var(--border)',borderRadius:'var(--radius-xl)',padding:'1.75rem',marginBottom:'2rem',display:'flex',flexDirection:'column',gap:'1.125rem'}}>
         <p style={{fontWeight:700,fontSize:'0.9375rem',color:'var(--txt-1)'}}>Add New Image</p>
 
-        {/* Details */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
           <div className="fgroup">
             <label className="fl">Title (optional)</label>
@@ -1025,7 +918,6 @@ function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useT
           </div>
         </div>
 
-        {/* Source toggle */}
         <div style={{display:'flex',gap:'0.375rem'}}>
           {(['file','url'] as const).map(m=>(
             <button key={m} type="button" onClick={()=>setMode(m)}
@@ -1056,7 +948,6 @@ function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useT
         <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];if(f)uploadFile(f)}}/>
       </div>
 
-      {/* Gallery grid */}
       {images.length===0
         ?<p style={{color:'var(--txt-3)',fontStyle:'italic',textAlign:'center',padding:'3rem'}}>No gallery images yet. Upload your first image above.</p>
         :<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'0.75rem'}}>
@@ -1083,7 +974,7 @@ function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useT
   )
 }
 
-// ── Coupons Manager ──
+// ── Coupons Manager (unchanged) ──
 function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [coupons,setCoupons]   = useState<{id:number;code:string;discount_percent:number;expires_at:string|null;usage_limit:number|null;used_count:number;is_active:boolean;created_at:string}[]>([])
   const [form,setForm]         = useState({code:'',discount_percent:10,expires_at:'',usage_limit:''})
@@ -1154,36 +1045,6 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
               Preview: Students enter <strong style={{color:'var(--gold)',letterSpacing:'0.08em'}}>{form.code||'CODE'}</strong> → get <strong style={{color:'var(--gold)'}}>{form.discount_percent}% off</strong>{form.usage_limit?` · max ${form.usage_limit} uses`:' · unlimited uses'}{form.expires_at?` · expires ${new Date(form.expires_at).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})}`:' · no expiry'}
             </div>
           )}
-          {/* Conversion fields */}
-          {!form.isFree&&(
-            <div style={{padding:'1rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',display:'flex',flexDirection:'column',gap:'0.875rem'}}>
-              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Conversion & Value</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-                <div className="fgroup">
-                  <label className="fl">Discount % (optional)</label>
-                  <input type="number" value={(form as {discountPercent?:number}).discountPercent||''} min={0} max={100} className="fi" placeholder="e.g. 20" onChange={e=>setForm(p=>({...p,discountPercent:parseInt(e.target.value)||0}))}/>
-                </div>
-                <div className="fgroup">
-                  <label className="fl">Discount expires (optional)</label>
-                  <input type="datetime-local" value={(form as {discountExpiresAt?:string}).discountExpiresAt||''} className="fi" onChange={e=>setForm(p=>({...p,discountExpiresAt:e.target.value}))}/>
-                </div>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Target Audience</label>
-                <input value={(form as {targetAudience?:string}).targetAudience||''} className="fi" placeholder="e.g. Students preparing for NYSC, Aspiring leaders" onChange={e=>setForm(p=>({...p,targetAudience:e.target.value}))}/>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Outcomes (one per line)</label>
-                <textarea value={(form as {outcomes?:string}).outcomes||''} className="fi" rows={3} placeholder="Speak confidently in any room&#10;Structure a 5-minute speech&#10;Overcome stage fright" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,outcomes:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown in the paywall "What you'll gain" section.</p>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Lesson List (one per line)</label>
-                <textarea value={(form as {lessons?:string}).lessons||''} className="fi" rows={4} placeholder="Lesson 1: Overcoming Fear&#10;Lesson 2: The Perfect Hook&#10;Lesson 3: Body Language Mastery" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,lessons:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown locked in the paywall to create urgency.</p>
-              </div>
-            </div>
-          )}
           <div style={{display:'flex',gap:'0.625rem'}}>
             <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity:saving?.7:1}}>
               {saving?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Saving…</>:<><Tag size={13}/>Create Coupon</>}
@@ -1202,20 +1063,17 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
           const statusColor = status==='active'?'#50c880':status==='inactive'?'var(--txt-3)':'#e07070'
           return (
             <div key={cp.id} style={{display:'flex',alignItems:'center',gap:'0.875rem',padding:'0.875rem 1rem',background:'var(--bg-1)',border:`1px solid ${status==='active'?'rgba(201,162,75,0.15)':'var(--border)'}`,borderRadius:'var(--radius-md)',flexWrap:'wrap',gap:'0.75rem'}}>
-              {/* Code + discount */}
               <div style={{display:'flex',alignItems:'center',gap:'0.75rem',flex:'0 0 auto'}}>
                 <div style={{padding:'0.375rem 0.75rem',background:'rgba(201,162,75,0.08)',border:'1px solid rgba(201,162,75,0.2)',borderRadius:'6px'}}>
                   <code style={{fontSize:'0.85rem',fontWeight:800,color:'var(--gold)',letterSpacing:'0.1em'}}>{cp.code}</code>
                 </div>
                 <span style={{fontFamily:'var(--font-serif)',fontSize:'1.125rem',fontWeight:700,color:'var(--txt-1)'}}>{cp.discount_percent}% off</span>
               </div>
-              {/* Stats */}
               <div style={{flex:1,minWidth:'120px',display:'flex',gap:'0.875rem',flexWrap:'wrap',alignItems:'center'}}>
                 <span style={{fontSize:'0.72rem',color:'var(--txt-3)'}}>{cp.used_count}{cp.usage_limit?`/${cp.usage_limit}`:''} uses</span>
                 {cp.expires_at&&<span style={{fontSize:'0.72rem',color:expired?'#e07070':'var(--txt-3)'}}>Expires {fmt(cp.expires_at)}</span>}
                 <span style={{fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:statusColor,background:`${statusColor}18`,padding:'0.15rem 0.5rem',borderRadius:'4px'}}>{status}</span>
               </div>
-              {/* Actions */}
               <div style={{display:'flex',gap:'0.375rem',flexShrink:0}}>
                 <button onClick={()=>toggle(cp.id)} title={cp.is_active?'Deactivate':'Activate'}
                   style={{padding:'0.4rem 0.75rem',borderRadius:'var(--radius-sm)',border:`1px solid ${cp.is_active?'rgba(220,60,60,0.3)':'rgba(80,200,128,0.3)'}`,background:'transparent',color:cp.is_active?'#e07070':'#50c880',fontSize:'0.75rem',fontWeight:600,cursor:'pointer'}}>
@@ -1233,7 +1091,7 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
   )
 }
 
-// ── System Status ──
+// ── System Status (unchanged) ──
 function SystemStatus({token}:{token:string}) {
   const [data,setData] = useState<{
     api?:{status:string;uptime:number;env:string}
@@ -1285,7 +1143,6 @@ function SystemStatus({token}:{token:string}) {
 
       {data&&(
         <div style={{display:'flex',flexDirection:'column',gap:'1.25rem'}}>
-          {/* Services grid */}
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'0.875rem'}}>
             {[
               {label:'API Server',     ok:data.api?.status==='ok',    sub:data.api?`${Math.floor((data.api.uptime||0)/60)}m uptime · ${data.api.env}`:''},
@@ -1302,7 +1159,6 @@ function SystemStatus({token}:{token:string}) {
             ))}
           </div>
 
-          {/* Recent events */}
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:'0.875rem'}}>
             {[
               {label:'Last Webhook',   val:data.last_webhook,  icon:'🔗', desc:(d:typeof data.last_webhook)=>d?`${d.type} · ${fmt(d.created_at)}`:'No webhook received'},
@@ -1323,290 +1179,274 @@ function SystemStatus({token}:{token:string}) {
   )
 }
 
-// ── MAIN ADMIN PAGE ──
+// ── MAIN ADMIN PAGE (FIXED: mounted guard, localStorage only on client) ──
 export default function AdminPage() {
-  const [token,    setToken]    = useState<string|null>(null)
-  const [tab,      setTab]      = useState<Tab>('dashboard')
-  const [stats,    setStats]    = useState<Stats|null>(null)
-  const [revenue,  setRevenue]  = useState<Revenue|null>(null)
-  const [analytics,setAnalytics] = useState<Analytics|null>(null)
+  const [token, setToken] = useState<string|null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [tab, setTab] = useState<Tab>('dashboard')
+  const [stats, setStats] = useState<Stats|null>(null)
+  const [revenue, setRevenue] = useState<Revenue|null>(null)
+  const [analytics, setAnalytics] = useState<Analytics|null>(null)
   const [impersonating, setImpersonating] = useState<Student|null>(null)
-  const [sidebarOpen, setSidebarOpen]     = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const toast = useToast()
 
-  useEffect(()=>{
-    const t = localStorage.getItem('scsi_admin_token')||localStorage.getItem('scsi_access_token')
-    if(!t){window.location.href='/login';return}
-    try{
-      const payload=JSON.parse(atob(t.split('.')[1]))
-      if(payload.role==='admin') setToken(t)
-      else window.location.href='/login'
-    }catch{window.location.href='/login'}
-  },[])
+  // Read token only on client
+  useEffect(() => {
+    setMounted(true)
+    const t = localStorage.getItem('scsi_admin_token') || localStorage.getItem('scsi_access_token')
+    if (!t) {
+      window.location.href = '/login'
+      return
+    }
+    try {
+      const payload = JSON.parse(atob(t.split('.')[1]))
+      if (payload.role === 'admin') setToken(t)
+      else window.location.href = '/login'
+    } catch {
+      window.location.href = '/login'
+    }
+  }, [])
 
-  useEffect(()=>{
-    if(!token||tab!=='dashboard') return
+  useEffect(() => {
+    if (!token || tab !== 'dashboard') return
     Promise.all([
-      axios.get(`${API}/api/admin/dashboard`,{headers:authH(token)}),
-      axios.get(`${API}/api/admin/revenue`,{headers:authH(token)}),
-      axios.get(`${API}/api/admin/analytics/revenue`,{headers:authH(token)}),
-    ]).then(([d,r,a])=>{setStats(d.data.data);setRevenue(r.data.data);setAnalytics(a.data.data)}).catch(()=>{})
-  },[token,tab])
+      axios.get(`${API}/api/admin/dashboard`, { headers: authH(token) }),
+      axios.get(`${API}/api/admin/revenue`, { headers: authH(token) }),
+      axios.get(`${API}/api/admin/analytics/revenue`, { headers: authH(token) }),
+    ]).then(([d, r, a]) => { setStats(d.data.data); setRevenue(r.data.data); setAnalytics(a.data.data) }).catch(() => { })
+  }, [token, tab])
 
-  const logout=()=>{localStorage.removeItem('scsi_admin_token');localStorage.removeItem('scsi_access_token');window.location.href='/login'}
+  const logout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('scsi_admin_token')
+      localStorage.removeItem('scsi_access_token')
+    }
+    window.location.href = '/login'
+  }
 
-  if(!token) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg-0)'}}><div style={{width:'28px',height:'28px',border:'2px solid var(--bg-3)',borderTop:'2px solid var(--gold)',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/><style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style></div>
+  if (!mounted || !token) {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-0)' }}>
+      <div style={{ width: '28px', height: '28px', border: '2px solid var(--bg-3)', borderTop: '2px solid var(--gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
+    </div>
+  }
 
-  const navItems:[Tab,React.ReactNode,string][] = [
-    ['dashboard',    <LayoutDashboard size={15}/>, 'Dashboard'],
-    ['blog',         <FileText size={15}/>,        'Blog Posts'],
-    ['videos',       <Video size={15}/>,           'Videos'],
-    ['gallery',      <ImageIcon size={15}/>,       'Gallery'],
-    ['students',     <Users size={15}/>,           'Students'],
-    ['contacts',     <MessageSquare size={15}/>,   'Contacts'],
-    ['registrations',<UserCheck size={15}/>,       'Registrations'],
-    ['testimonials', <BookOpen size={15}/>,        'Testimonials'],
-    ['subscribers',  <Mail size={15}/>,            'Subscribers'],
-    ['broadcast',    <Send size={15}/>,            'Broadcast'],
-    ['coupons',      <Tag size={15}/>,              'Coupons'],
-    ['system',       <Activity size={15}/>,         'System'],
-    ['settings',     <Shield size={15}/>,          'Settings'],
+  const navItems: [Tab, React.ReactNode, string][] = [
+    ['dashboard', <LayoutDashboard size={15} />, 'Dashboard'],
+    ['blog', <FileText size={15} />, 'Blog Posts'],
+    ['videos', <Video size={15} />, 'Videos'],
+    ['gallery', <ImageIcon size={15} />, 'Gallery'],
+    ['students', <Users size={15} />, 'Students'],
+    ['contacts', <MessageSquare size={15} />, 'Contacts'],
+    ['registrations', <UserCheck size={15} />, 'Registrations'],
+    ['testimonials', <BookOpen size={15} />, 'Testimonials'],
+    ['subscribers', <Mail size={15} />, 'Subscribers'],
+    ['broadcast', <Send size={15} />, 'Broadcast'],
+    ['coupons', <Tag size={15} />, 'Coupons'],
+    ['system', <Activity size={15} />, 'System'],
+    ['settings', <Shield size={15} />, 'Settings'],
   ]
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',background:'var(--bg-0)',fontFamily:'var(--font-sans)'}}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg-0)', fontFamily: 'var(--font-sans)' }}>
       {toast.ToastUI}
 
-      {/* ── Sidebar ── */}
-      <aside className="admin-sidebar" style={{width:'240px',flexShrink:0,background:'var(--bg-1)',borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',height:'100vh',position:'sticky',top:0,overflow:'hidden'}}>
-        {/* Logo */}
-        <div style={{padding:'1.375rem 1rem 1rem',borderBottom:'1px solid var(--border)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.5rem'}}>
-          <div style={{display:'flex',alignItems:'center',gap:'0.5rem',overflow:'hidden'}}>
-            <div style={{width:'30px',height:'30px',borderRadius:'8px',background:'rgba(201,162,75,0.12)',border:'1px solid rgba(201,162,75,0.25)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <Shield size={14} color="var(--gold)"/>
+      {/* Desktop Sidebar */}
+      <aside className="admin-sidebar" style={{ width: '240px', flexShrink: 0, background: 'var(--bg-1)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1.375rem 1rem 1rem', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(201,162,75,0.12)', border: '1px solid rgba(201,162,75,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Shield size={14} color="var(--gold)" />
             </div>
-            {sidebarOpen&&<div style={{overflow:'hidden',whiteSpace:'nowrap'}}>
-              <p style={{fontFamily:'var(--font-serif)',fontSize:'0.875rem',fontWeight:700,color:'var(--gold)',lineHeight:1}}>SCSI Admin</p>
-              <p style={{fontSize:'0.5rem',letterSpacing:'0.16em',textTransform:'uppercase',color:'var(--txt-3)',marginTop:'0.1rem'}}>Panel</p>
+            {sidebarOpen && <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: '0.875rem', fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>SCSI Admin</p>
+              <p style={{ fontSize: '0.5rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--txt-3)', marginTop: '0.1rem' }}>Panel</p>
             </div>}
           </div>
-
         </div>
 
-        {/* Coach profile mini */}
-        {sidebarOpen&&(
-          <div style={{padding:'0.875rem 1rem',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:'0.625rem',flexShrink:0}}>
-            <div style={{width:'30px',height:'30px',borderRadius:'50%',overflow:'hidden',flexShrink:0,border:'1.5px solid rgba(201,162,75,0.3)'}}>
-              <img src="/coach-photo.jpg" alt="Coach" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}} onError={e=>{e.currentTarget.style.display='none'}}/>
+        {sidebarOpen && (
+          <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid rgba(201,162,75,0.3)' }}>
+              <img src="/coach-photo.jpg" alt="Coach" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             </div>
-            <div style={{minWidth:0}}>
-              <p style={{fontSize:'0.78rem',fontWeight:700,color:'var(--txt-1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>Coach Precious</p>
-              <p style={{fontSize:'0.6rem',color:'var(--gold)',letterSpacing:'0.06em'}}>Administrator</p>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--txt-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Coach Precious</p>
+              <p style={{ fontSize: '0.6rem', color: 'var(--gold)', letterSpacing: '0.06em' }}>Administrator</p>
             </div>
           </div>
         )}
 
-        {/* Nav */}
-        <nav style={{flex:1,overflowY:'auto',padding:'0.5rem 0.375rem'}}>
-          {navItems.map(([id,icon,label])=>(
-            <button key={id} onClick={()=>{setTab(id);setImpersonating(null)}}
-              
-              style={{width:'100%',display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.625rem 0.75rem',justifyContent:'flex-start',borderRadius:'var(--radius-sm)',background:tab===id?'var(--gold-dim)':'transparent',color:tab===id?'var(--gold)':'var(--txt-2)',fontFamily:'var(--font-sans)',fontSize:'0.8125rem',fontWeight:tab===id?600:400,border:tab===id?'1px solid rgba(201,162,75,0.2)':'1px solid transparent',cursor:'pointer',transition:'all 0.15s',textAlign:'left',marginBottom:'0.1rem',whiteSpace:'nowrap',overflow:'hidden'}}
-              onMouseEnter={e=>{if(tab!==id){e.currentTarget.style.background='var(--bg-2)';e.currentTarget.style.color='var(--txt-1)'}}}
-              onMouseLeave={e=>{if(tab!==id){e.currentTarget.style.background='transparent';e.currentTarget.style.color='var(--txt-2)'}}}>
-              <span style={{flexShrink:0}}>{icon}</span>
-              {sidebarOpen&&label}
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0.375rem' }}>
+          {navItems.map(([id, icon, label]) => (
+            <button key={id} onClick={() => { setTab(id); setImpersonating(null) }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.75rem', justifyContent: 'flex-start', borderRadius: 'var(--radius-sm)', background: tab === id ? 'var(--gold-dim)' : 'transparent', color: tab === id ? 'var(--gold)' : 'var(--txt-2)', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', fontWeight: tab === id ? 600 : 400, border: tab === id ? '1px solid rgba(201,162,75,0.2)' : '1px solid transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left', marginBottom: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden' }}
+              onMouseEnter={e => { if (tab !== id) { e.currentTarget.style.background = 'var(--bg-2)'; e.currentTarget.style.color = 'var(--txt-1)' } }}
+              onMouseLeave={e => { if (tab !== id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--txt-2)' } }}>
+              <span style={{ flexShrink: 0 }}>{icon}</span>
+              {sidebarOpen && label}
             </button>
           ))}
         </nav>
 
-        {/* Footer */}
-        <div style={{padding:'0.5rem 0.375rem',borderTop:'1px solid var(--border)',flexShrink:0}}>
-          <a href="/" target="_blank" style={{width:'100%',display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.5rem 0.75rem',justifyContent:'flex-start',borderRadius:'var(--radius-sm)',color:'var(--txt-3)',fontSize:'0.78rem',textDecoration:'none',transition:'all 0.15s',whiteSpace:'nowrap',overflow:'hidden',marginBottom:'0.1rem'}}
-            onMouseEnter={e=>e.currentTarget.style.color='var(--txt-1)'}
-            onMouseLeave={e=>e.currentTarget.style.color='var(--txt-3)'}>
-            <Eye size={14} style={{flexShrink:0}}/>{sidebarOpen&&'View Site'}
+        <div style={{ padding: '0.5rem 0.375rem', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <a href="/" target="_blank" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', justifyContent: 'flex-start', borderRadius: 'var(--radius-sm)', color: 'var(--txt-3)', fontSize: '0.78rem', textDecoration: 'none', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', marginBottom: '0.1rem' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--txt-1)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--txt-3)'}>
+            <Eye size={14} style={{ flexShrink: 0 }} />{sidebarOpen && 'View Site'}
           </a>
-          <button onClick={logout} style={{width:'100%',display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.5rem 0.75rem',justifyContent:'flex-start',borderRadius:'var(--radius-sm)',border:'none',background:'transparent',color:'var(--txt-3)',fontSize:'0.78rem',cursor:'pointer',transition:'all 0.15s',whiteSpace:'nowrap',overflow:'hidden'}}
-            onMouseEnter={e=>{e.currentTarget.style.background='rgba(220,60,60,0.08)';e.currentTarget.style.color='#e07070'}}
-            onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='var(--txt-3)'}}>
-            <LogOut size={14} style={{flexShrink:0}}/>{sidebarOpen&&'Sign Out'}
+          <button onClick={logout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', justifyContent: 'flex-start', borderRadius: 'var(--radius-sm)', border: 'none', background: 'transparent', color: 'var(--txt-3)', fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,60,60,0.08)'; e.currentTarget.style.color = '#e07070' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--txt-3)' }}>
+            <LogOut size={14} style={{ flexShrink: 0 }} />{sidebarOpen && 'Sign Out'}
           </button>
         </div>
       </aside>
 
-      {/* ── Main ── */}
-      <div style={{flex:1,display:'flex',flexDirection:'column',minWidth:0,overflow:'auto'}}>
+      {/* Mobile header & overlay sidebar (same as before) */}
+      <div className="admin-mob-hdr" style={{ display: 'none', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: 'var(--bg-1)', borderBottom: '1px solid var(--border)', flexShrink: 0, position: 'sticky', top: 0, zIndex: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <button onClick={() => setMobileSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--txt-2)', cursor: 'pointer', display: 'flex', padding: '0.25rem' }}>
+            <Menu size={20} />
+          </button>
+          <span style={{ fontFamily: 'var(--font-serif)', fontSize: '0.9375rem', fontWeight: 700, color: 'var(--gold)' }}>SCSI Admin</span>
+        </div>
+        <div style={{ width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(201,162,75,0.3)' }}>
+          <img src="/coach-photo.jpg" alt="Coach" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+        </div>
+      </div>
 
-        {/* Mobile header bar */}
-        <div className="admin-mob-hdr" style={{display:'none',alignItems:'center',justifyContent:'space-between',padding:'0.875rem 1.25rem',background:'var(--bg-1)',borderBottom:'1px solid var(--border)',flexShrink:0,position:'sticky',top:0,zIndex:10}}>
-          <div style={{display:'flex',alignItems:'center',gap:'0.625rem'}}>
-            <button onClick={()=>setMobileSidebarOpen(true)} style={{background:'none',border:'none',color:'var(--txt-2)',cursor:'pointer',display:'flex',padding:'0.25rem'}}>
-              <Menu size={20}/>
+      <aside style={{ position: 'fixed', top: 0, left: mobileSidebarOpen ? 0 : '-260px', width: '240px', height: '100vh', background: 'var(--bg-1)', borderRight: '1px solid var(--border)', zIndex: 80, display: 'flex', flexDirection: 'column', transition: 'left 0.3s cubic-bezier(.4,0,.2,1)', overflowY: 'auto' }} className="admin-mob-nav">
+        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', fontWeight: 700, color: 'var(--gold)' }}>SCSI Admin</span>
+          <button onClick={() => setMobileSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--txt-3)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+        </div>
+        <nav style={{ flex: 1, padding: '0.5rem 0.375rem' }}>
+          {navItems.map(([id, icon, label]) => (
+            <button key={id} onClick={() => { setTab(id); setImpersonating(null); setMobileSidebarOpen(false) }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-sm)', background: tab === id ? 'var(--gold-dim)' : 'transparent', color: tab === id ? 'var(--gold)' : 'var(--txt-2)', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', fontWeight: tab === id ? 600 : 400, border: tab === id ? '1px solid rgba(201,162,75,0.2)' : '1px solid transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left', marginBottom: '0.1rem' }}>
+              {icon}{label}
             </button>
-            <span style={{fontFamily:'var(--font-serif)',fontSize:'0.9375rem',fontWeight:700,color:'var(--gold)'}}>SCSI Admin</span>
+          ))}
+        </nav>
+        <div style={{ padding: '0.5rem 0.375rem', borderTop: '1px solid var(--border)' }}>
+          <button onClick={logout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-sm)', border: 'none', background: 'transparent', color: 'var(--txt-3)', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,60,60,0.08)'; e.currentTarget.style.color = '#e07070' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--txt-3)' }}>
+            <LogOut size={14} />Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Impersonation banner (same as before) */}
+      {impersonating && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-0)', overflowY: 'auto', animation: 'fadeUp 0.3s ease both' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--bg-1)', borderBottom: '1px solid var(--border)', padding: '0.875rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <button onClick={() => setImpersonating(null)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-2)', color: 'var(--txt-2)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', textDecoration: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.color = 'var(--txt-1)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--txt-2)' }}>
+              ← Back to Admin Panel
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.4rem 0.875rem', background: 'rgba(201,162,75,0.1)', border: '1px solid rgba(201,162,75,0.3)', borderRadius: '99px' }}>
+              <Eye size={13} color="var(--gold)" />
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--gold)' }}>👀 Viewing as: {impersonating.full_name}</span>
+            </div>
           </div>
-          <div style={{width:'28px',height:'28px',borderRadius:'50%',overflow:'hidden',border:'1.5px solid rgba(201,162,75,0.3)'}}>
-            <img src="/coach-photo.jpg" alt="Coach" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}} onError={e=>{e.currentTarget.style.display='none'}}/>
+          <div style={{ padding: '1.75rem 2rem', maxWidth: '860px', margin: '0 auto' }}>
+            <ImpersonatedView student={impersonating} onExit={() => setImpersonating(null)} />
           </div>
         </div>
+      )}
 
-        {/* Mobile slide-over sidebar */}
-        <aside style={{position:'fixed',top:0,left:mobileSidebarOpen?0:'-260px',width:'240px',height:'100vh',background:'var(--bg-1)',borderRight:'1px solid var(--border)',zIndex:80,display:'flex',flexDirection:'column',transition:'left 0.3s cubic-bezier(.4,0,.2,1)',overflowY:'auto'}} className="admin-mob-nav">
-          <div style={{padding:'1.25rem',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <span style={{fontFamily:'var(--font-serif)',fontSize:'1rem',fontWeight:700,color:'var(--gold)'}}>SCSI Admin</span>
-            <button onClick={()=>setMobileSidebarOpen(false)} style={{background:'none',border:'none',color:'var(--txt-3)',cursor:'pointer',display:'flex'}}><X size={18}/></button>
-          </div>
-          <nav style={{flex:1,padding:'0.5rem 0.375rem'}}>
-            {navItems.map(([id,icon,label])=>(
-              <button key={id} onClick={()=>{setTab(id);setImpersonating(null);setMobileSidebarOpen(false)}}
-                style={{width:'100%',display:'flex',alignItems:'center',gap:'0.625rem',padding:'0.625rem 0.875rem',borderRadius:'var(--radius-sm)',background:tab===id?'var(--gold-dim)':'transparent',color:tab===id?'var(--gold)':'var(--txt-2)',fontFamily:'var(--font-sans)',fontSize:'0.8125rem',fontWeight:tab===id?600:400,border:tab===id?'1px solid rgba(201,162,75,0.2)':'1px solid transparent',cursor:'pointer',transition:'all 0.15s',textAlign:'left',marginBottom:'0.1rem'}}>
-                {icon}{label}
-              </button>
-            ))}
-          </nav>
-          <div style={{padding:'0.5rem 0.375rem',borderTop:'1px solid var(--border)'}}>
-            <button onClick={logout} style={{width:'100%',display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.625rem 0.875rem',borderRadius:'var(--radius-sm)',border:'none',background:'transparent',color:'var(--txt-3)',fontSize:'0.8rem',cursor:'pointer',transition:'all 0.15s',textAlign:'left'}}
-              onMouseEnter={e=>{e.currentTarget.style.background='rgba(220,60,60,0.08)';e.currentTarget.style.color='#e07070'}}
-              onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='var(--txt-3)'}}>
-              <LogOut size={14}/>Sign Out
-            </button>
-          </div>
-        </aside>
-
-        {/* Impersonation banner */}
-        {impersonating&&(
-          <div style={{padding:'0.75rem 1.5rem',background:'linear-gradient(90deg,rgba(201,162,75,0.15),rgba(201,162,75,0.06))',borderBottom:'2px solid rgba(201,162,75,0.4)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem',flexShrink:0,flexWrap:'wrap',position:'sticky',top:0,zIndex:10}}>
-            <div style={{display:'flex',alignItems:'center',gap:'0.75rem'}}>
-              <Eye size={16} color="var(--gold)"/>
-              <span style={{fontWeight:700,color:'var(--gold)',fontSize:'0.9rem'}}>👀 Viewing as: <strong>{impersonating.full_name}</strong></span>
-              <span style={{fontSize:'0.75rem',color:'var(--txt-3)',fontStyle:'italic'}}>({impersonating.email})</span>
-            </div>
-            <button onClick={()=>setImpersonating(null)}
-              style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.5rem 1.125rem',borderRadius:'var(--radius-sm)',border:'1.5px solid rgba(201,162,75,0.5)',background:'rgba(201,162,75,0.12)',color:'var(--gold)',fontSize:'0.8rem',fontWeight:700,cursor:'pointer',transition:'all 0.2s'}}
-              onMouseEnter={e=>{e.currentTarget.style.background='rgba(201,162,75,0.22)'}}
-              onMouseLeave={e=>{e.currentTarget.style.background='rgba(201,162,75,0.12)'}}>
-              <ArrowLeft size={14}/>Back to Admin Panel
-            </button>
-          </div>
-        )}
-
-        {/* Impersonating overlay - full screen */}
-        {impersonating && (
-          <div style={{position:'fixed',inset:0,zIndex:70,background:'var(--bg-0)',overflowY:'auto',animation:'fadeUp 0.3s ease both'}}>
-            {/* Sticky header */}
-            <div style={{position:'sticky',top:0,zIndex:5,background:'var(--bg-1)',borderBottom:'1px solid var(--border)',padding:'0.875rem 1.5rem',display:'flex',alignItems:'center',gap:'1rem',flexWrap:'wrap'}}>
-              <button onClick={()=>setImpersonating(null)}
-                style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.5rem 1rem',borderRadius:'var(--radius-sm)',border:'1px solid var(--border)',background:'var(--bg-2)',color:'var(--txt-2)',fontSize:'0.8125rem',fontWeight:600,cursor:'pointer',transition:'all 0.15s',textDecoration:'none'}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--border-hover)';e.currentTarget.style.color='var(--txt-1)'}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--border)';e.currentTarget.style.color='var(--txt-2)'}}>
-                ← Back to Admin Panel
-              </button>
-              <div style={{display:'flex',alignItems:'center',gap:'0.625rem',padding:'0.4rem 0.875rem',background:'rgba(201,162,75,0.1)',border:'1px solid rgba(201,162,75,0.3)',borderRadius:'99px'}}>
-                <Eye size={13} color="var(--gold)"/>
-                <span style={{fontSize:'0.8rem',fontWeight:700,color:'var(--gold)'}}>👀 Viewing as: {impersonating.full_name}</span>
-              </div>
-            </div>
-            {/* Content */}
-            <div style={{padding:'1.75rem 2rem',maxWidth:'860px',margin:'0 auto'}}>
-              <ImpersonatedView student={impersonating} onExit={()=>setImpersonating(null)}/>
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
-        <main style={{flex:1,overflowY:'auto',padding:'1.75rem 2rem',maxWidth:'1100px',margin:'0 auto',width:'100%',boxSizing:'border-box'}}>
-          {impersonating
-            ? null
-            : <>
-                {tab==='dashboard'&&(
-                  <div style={{display:'flex',flexDirection:'column',gap:'1.5rem',animation:'fadeUp 0.4s ease both'}}>
-
-                    {/* ── Hero revenue card ── */}
-                    {analytics ? (
-                      <div style={{padding:'1.75rem',background:'linear-gradient(135deg,var(--bg-3),var(--bg-4))',border:'1px solid rgba(201,162,75,0.2)',borderRadius:'var(--radius-xl)',position:'relative',overflow:'hidden'}}>
-                        <div style={{position:'absolute',top:'-30px',right:'-30px',width:'140px',height:'140px',borderRadius:'50%',background:'rgba(201,162,75,0.05)',pointerEvents:'none'}}/>
-                        <p style={{fontSize:'0.65rem',fontWeight:700,letterSpacing:'0.18em',textTransform:'uppercase',color:'var(--gold)',marginBottom:'0.375rem'}}>Total Revenue (All Time)</p>
-                        <p style={{fontFamily:'var(--font-serif)',fontSize:'clamp(2rem,4vw,3rem)',fontWeight:700,color:'var(--txt-1)',lineHeight:1,marginBottom:'0.375rem'}}>{naira(analytics.total_revenue)}</p>
-                        <p style={{fontSize:'0.78rem',color:'var(--txt-3)',marginBottom:'1.5rem'}}>{analytics.subscription_count + analytics.video_purchase_count} total transactions</p>
-                        {/* Revenue breakdown row */}
-                        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:'0.75rem'}}>
-                          {[
-                            {label:'Subscriptions',val:analytics.subscription_revenue,icon:<Crown size={13}/>,sub:`${analytics.subscription_count} payments`},
-                            {label:'Video Sales',val:analytics.video_revenue,icon:<Video size={13}/>,sub:`${analytics.video_purchase_count} purchases`},
-                            {label:'Wallet Funded',val:analytics.wallet_funding_total,icon:<Wallet size={13}/>,sub:'Total top-ups'},
-                            {label:'Last 7 Days',val:analytics.revenue_last_7_days,icon:<TrendingUp size={13}/>,sub:'Combined'},
-                            {label:'Last 30 Days',val:analytics.revenue_last_30_days,icon:<BarChart2 size={13}/>,sub:`${analytics.last_30_sub_count+analytics.last_30_vid_count} txns`},
-                          ].map(item=>(
-                            <div key={item.label} style={{padding:'0.875rem',background:'rgba(201,162,75,0.06)',border:'1px solid rgba(201,162,75,0.12)',borderRadius:'var(--radius-md)'}}>
-                              <div style={{display:'flex',alignItems:'center',gap:'0.35rem',color:'var(--gold)',marginBottom:'0.375rem'}}>{item.icon}<span style={{fontSize:'0.65rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase'}}>{item.label}</span></div>
-                              <p style={{fontFamily:'var(--font-serif)',fontWeight:700,fontSize:'1.0625rem',color:'var(--txt-1)',marginBottom:'0.1rem'}}>{naira(item.val)}</p>
-                              <p style={{fontSize:'0.68rem',color:'var(--txt-3)'}}>{item.sub}</p>
-                            </div>
-                          ))}
+      {/* Main content area */}
+      <main style={{ flex: 1, overflowY: 'auto', padding: '1.75rem 2rem', maxWidth: '1100px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        {impersonating ? null : (
+          <>
+            {tab === 'dashboard' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeUp 0.4s ease both' }}>
+                {analytics ? (
+                  <div style={{ padding: '1.75rem', background: 'linear-gradient(135deg,var(--bg-3),var(--bg-4))', border: '1px solid rgba(201,162,75,0.2)', borderRadius: 'var(--radius-xl)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(201,162,75,0.05)', pointerEvents: 'none' }} />
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '0.375rem' }}>Total Revenue (All Time)</p>
+                    <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 700, color: 'var(--txt-1)', lineHeight: 1, marginBottom: '0.375rem' }}>{naira(analytics.total_revenue)}</p>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--txt-3)', marginBottom: '1.5rem' }}>{analytics.subscription_count + analytics.video_purchase_count} total transactions</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '0.75rem' }}>
+                      {[
+                        { label: 'Subscriptions', val: analytics.subscription_revenue, icon: <Crown size={13} />, sub: `${analytics.subscription_count} payments` },
+                        { label: 'Video Sales', val: analytics.video_revenue, icon: <Video size={13} />, sub: `${analytics.video_purchase_count} purchases` },
+                        { label: 'Wallet Funded', val: analytics.wallet_funding_total, icon: <Wallet size={13} />, sub: 'Total top-ups' },
+                        { label: 'Last 7 Days', val: analytics.revenue_last_7_days, icon: <TrendingUp size={13} />, sub: 'Combined' },
+                        { label: 'Last 30 Days', val: analytics.revenue_last_30_days, icon: <BarChart2 size={13} />, sub: `${analytics.last_30_sub_count + analytics.last_30_vid_count} txns` },
+                      ].map(item => (
+                        <div key={item.label} style={{ padding: '0.875rem', background: 'rgba(201,162,75,0.06)', border: '1px solid rgba(201,162,75,0.12)', borderRadius: 'var(--radius-md)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--gold)', marginBottom: '0.375rem' }}>{item.icon}<span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{item.label}</span></div>
+                          <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.0625rem', color: 'var(--txt-1)', marginBottom: '0.1rem' }}>{naira(item.val)}</p>
+                          <p style={{ fontSize: '0.68rem', color: 'var(--txt-3)' }}>{item.sub}</p>
                         </div>
-                      </div>
-                    ) : (
-                      <div style={{height:'200px',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-xl)'}} className="skeleton"/>
-                    )}
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ height: '200px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)' }} className="skeleton" />
+                )}
 
-                    {/* ── Top Earning Videos ── */}
-                    {analytics && analytics.top_earning_videos.length > 0 && (
-                      <div style={{background:'var(--bg-1)',border:'1px solid var(--border)',borderRadius:'var(--radius-xl)',padding:'1.5rem'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'1.25rem'}}>
-                          <TrendingUp size={15} color="var(--gold)"/>
-                          <h3 style={{fontFamily:'var(--font-serif)',fontSize:'1rem',fontWeight:700}}>Top Earning Videos</h3>
+                {analytics && analytics.top_earning_videos.length > 0 && (
+                  <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                      <TrendingUp size={15} color="var(--gold)" />
+                      <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', fontWeight: 700 }}>Top Earning Videos</h3>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {analytics.top_earning_videos.map((v, i) => (
+                        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.75rem 0.875rem', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', transition: 'border-color 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'rgba(201,162,75,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ fontFamily: 'var(--font-serif)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)' }}>{i + 1}</span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--txt-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '0.1rem' }}>{v.title}</p>
+                            <p style={{ fontSize: '0.68rem', color: 'var(--txt-3)' }}>{v.purchase_count} purchase{v.purchase_count !== 1 ? 's' : ''} · {naira(v.price_kobo)} each</p>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1rem', color: 'var(--gold)' }}>{naira(v.total_revenue_kobo)}</p>
+                          </div>
                         </div>
-                        <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
-                          {analytics.top_earning_videos.map((v,i)=>(
-                            <div key={v.id} style={{display:'flex',alignItems:'center',gap:'0.875rem',padding:'0.75rem 0.875rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',transition:'border-color 0.15s'}}
-                              onMouseEnter={e=>e.currentTarget.style.borderColor='var(--border-hover)'}
-                              onMouseLeave={e=>e.currentTarget.style.borderColor='var(--border)'}>
-                              <div style={{width:'26px',height:'26px',borderRadius:'6px',background:'rgba(201,162,75,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                                <span style={{fontFamily:'var(--font-serif)',fontSize:'0.75rem',fontWeight:700,color:'var(--gold)'}}>{i+1}</span>
-                              </div>
-                              <div style={{flex:1,minWidth:0}}>
-                                <p style={{fontWeight:600,fontSize:'0.875rem',color:'var(--txt-1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',marginBottom:'0.1rem'}}>{v.title}</p>
-                                <p style={{fontSize:'0.68rem',color:'var(--txt-3)'}}>{v.purchase_count} purchase{v.purchase_count!==1?'s':''} · {naira(v.price_kobo)} each</p>
-                              </div>
-                              <div style={{textAlign:'right',flexShrink:0}}>
-                                <p style={{fontFamily:'var(--font-serif)',fontWeight:700,fontSize:'1rem',color:'var(--gold)'}}>{naira(v.total_revenue_kobo)}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ── Platform stats grid ── */}
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:'0.875rem'}}>
-                      {stats ? <>
-                        <StatCard label="Contact Submissions"   value={stats.totalContacts}        icon={<MessageSquare size={15}/>}/>
-                        <StatCard label="Refinery Applications"  value={stats.totalRegistrations}   icon={<BookOpen size={15}/>}/>
-                        <StatCard label="Newsletter Subs"        value={stats.activeSubscribers}    icon={<Mail size={15}/>}/>
-                        <StatCard label="Published Articles"     value={stats.publishedPosts}       icon={<FileText size={15}/>}/>
-                        <StatCard label="Published Videos"       value={stats.publishedVideos}      icon={<Video size={15}/>}/>
-                        <StatCard label="Pending Testimonials"   value={stats.pendingTestimonials}  icon={<UserCheck size={15}/>} color={stats.pendingTestimonials>0?'#e07070':'var(--gold)'}/>
-                      </> : Array(6).fill(0).map((_,i)=><div key={i} style={{height:'110px',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)'}} className="skeleton"/>)}
+                      ))}
                     </div>
                   </div>
                 )}
-                {tab==='blog'          && <BlogManager token={token} toast={toast}/>}
-                {tab==='gallery'        && <GalleryManager token={token} toast={toast}/>}
-                {tab==='videos'        && <VideoManager token={token} toast={toast}/>}
-                {tab==='students'      && <StudentsManager token={token} toast={toast} onImpersonate={setImpersonating}/>}
-                {tab==='contacts'      && <ContactsView token={token}/>}
-                {tab==='registrations' && <RegistrationsView token={token}/>}
-                {tab==='testimonials'  && <TestimonialsManager token={token} toast={toast}/>}
-                {tab==='subscribers'   && <SubscribersView token={token} toast={toast}/>}
-                {tab==='coupons'       && <CouponsManager token={token} toast={toast}/>}
-                {tab==='system'        && <SystemStatus token={token}/>}
-                {tab==='broadcast'     && <BroadcastManager token={token} toast={toast}/>}
-                {tab==='settings'      && <AdminSettings token={token} toast={toast}/>}
-              </>}
-        </main>
-      </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: '0.875rem' }}>
+                  {stats ? <>
+                    <StatCard label="Contact Submissions" value={stats.totalContacts} icon={<MessageSquare size={15} />} />
+                    <StatCard label="Refinery Applications" value={stats.totalRegistrations} icon={<BookOpen size={15} />} />
+                    <StatCard label="Newsletter Subs" value={stats.activeSubscribers} icon={<Mail size={15} />} />
+                    <StatCard label="Published Articles" value={stats.publishedPosts} icon={<FileText size={15} />} />
+                    <StatCard label="Published Videos" value={stats.publishedVideos} icon={<Video size={15} />} />
+                    <StatCard label="Pending Testimonials" value={stats.pendingTestimonials} icon={<UserCheck size={15} />} color={stats.pendingTestimonials > 0 ? '#e07070' : 'var(--gold)'} />
+                  </> : Array(6).fill(0).map((_, i) => <div key={i} style={{ height: '110px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }} className="skeleton" />)}
+                </div>
+              </div>
+            )}
+            {tab === 'blog' && <BlogManager token={token} toast={toast} />}
+            {tab === 'gallery' && <GalleryManager token={token} toast={toast} />}
+            {tab === 'videos' && <VideoManager token={token} toast={toast} />}
+            {tab === 'students' && <StudentsManager token={token} toast={toast} onImpersonate={setImpersonating} />}
+            {tab === 'contacts' && <ContactsView token={token} />}
+            {tab === 'registrations' && <RegistrationsView token={token} />}
+            {tab === 'testimonials' && <TestimonialsManager token={token} toast={toast} />}
+            {tab === 'subscribers' && <SubscribersView token={token} toast={toast} />}
+            {tab === 'coupons' && <CouponsManager token={token} toast={toast} />}
+            {tab === 'system' && <SystemStatus token={token} />}
+            {tab === 'broadcast' && <BroadcastManager token={token} toast={toast} />}
+            {tab === 'settings' && <AdminSettings token={token} toast={toast} />}
+          </>
+        )}
+      </main>
 
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -1614,29 +1454,22 @@ export default function AdminPage() {
         @keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
         .skeleton{background:linear-gradient(90deg,var(--bg-2) 25%,var(--bg-3) 50%,var(--bg-2) 75%);background-size:200% 100%;animation:skeletonShimmer 1.5s ease infinite}
         @keyframes skeletonShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
-        .skeleton{background:linear-gradient(90deg,var(--bg-2) 25%,var(--bg-3) 50%,var(--bg-2) 75%);background-size:200% 100%;animation:skeletonShimmer 1.5s ease infinite}
-        @keyframes skeletonShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        /* Desktop: show sidebar, hide mobile header */
-        .admin-sidebar   { display:flex !important; }
-        .admin-mob-hdr   { display:none !important; }
-        .admin-mob-nav   { display:flex !important; flex-direction:column; }
-        /* Mobile: hide sidebar, show mobile header */
-        @media(max-width:768px) {
-          .admin-sidebar { display:none !important; }
-          .admin-mob-hdr { display:flex !important; }
+        .admin-sidebar{display:flex !important}
+        .admin-mob-hdr{display:none !important}
+        .admin-mob-nav{display:flex !important;flex-direction:column}
+        @media(max-width:768px){
+          .admin-sidebar{display:none !important}
+          .admin-mob-hdr{display:flex !important}
         }
-        @media(min-width:769px) {
-          .admin-mob-nav { display:none !important; }
+        @media(min-width:769px){
+          .admin-mob-nav{display:none !important}
         }
       `}</style>
     </div>
   )
 }
 
-// Remaining views
+// Remaining helper views (unchanged but need to be defined)
 function TestimonialsManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [items,setItems] = useState<{id:number;name:string;role:string;quote:string;approved:boolean;created_at:string}[]>([])
   const load = useCallback(async()=>{try{const{data}=await axios.get(`${API}/api/admin/testimonials`,{headers:authH(token)});setItems(data.data||[])}catch{}},[token])
@@ -1672,7 +1505,14 @@ function TestimonialsManager({token,toast}:{token:string;toast:ReturnType<typeof
 function SubscribersView({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [subs,setSubs] = useState<{id:number;email:string;created_at:string}[]>([])
   useEffect(()=>{axios.get(`${API}/api/admin/subscribers`,{headers:authH(token)}).then(r=>setSubs(r.data.data||[])).catch(()=>{})},[token])
-  const exportCSV=()=>{const c='Email,Date\n'+subs.map(s=>`${s.email},${fmt(s.created_at)}`).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download='subscribers.csv';a.click();toast.ok('CSV exported!')}
+  const exportCSV=()=>{
+    const c='Email,Date\n'+subs.map(s=>`${s.email},${fmt(s.created_at)}`).join('\n')
+    const a=document.createElement('a')
+    a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}))
+    a.download='subscribers.csv'
+    a.click()
+    toast.ok('CSV exported!')
+  }
   return (
     <div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem',flexWrap:'wrap',gap:'1rem'}}>

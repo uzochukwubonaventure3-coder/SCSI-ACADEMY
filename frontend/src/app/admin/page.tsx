@@ -27,7 +27,15 @@ interface Analytics {
   top_earning_videos:{id:number;title:string;price_kobo:number;purchase_count:number;total_revenue_kobo:number}[]
   daily_chart:{day:string;total_kobo:number}[]
 }
-interface BlogPost { id:number; title:string; slug:string; excerpt:string; content:string; cover_image:string; tags:string[]; status:string; created_at:string }
+interface BlogPost {
+  id: number
+  title: string
+  content: string
+  cover_image: string
+  excerpt: string
+  created_at: string
+  slug: string
+};
 interface VideoPost { id:number; title:string; slug:string; description:string; video_url:string; duration:string; tags:string[]; status:string; created_at:string }
 interface Student { id:number; full_name:string; email:string; plan:string; expires_at:string; is_active:boolean; created_at:string; phone:string; bio:string }
 interface Contact { id:number; full_name:string; email:string; phone:string; inquiry_type:string; message:string; created_at:string }

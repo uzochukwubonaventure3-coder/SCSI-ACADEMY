@@ -111,7 +111,7 @@ export default function RefineryPage() {
           </div>
 
           <a
-            href="https://wa.me/2349018053015"
+            href={`https://wa.me/2349018053015?text=${encodeURIComponent('Hello Coach Precious! I just registered for the SCSI Refinery programme. I am excited to begin my transformation journey!')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-gold"

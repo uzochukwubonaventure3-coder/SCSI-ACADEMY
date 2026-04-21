@@ -26,16 +26,20 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (busy) return
     setBusy(true); setError(''); setNeedsPayment(false)
 
-    const res = await login(form.email, form.password)
-    if (res.success) {
-      router.replace(res.role === 'admin' ? '/admin' : next)
-    } else {
-      setError(res.message)
-      if (res.needsPayment) { setNeedsPayment(true); setExpiredEmail(form.email) }
+    try {
+      const res = await login(form.email, form.password)
+      if (res.success) {
+        router.replace(res.role === 'admin' ? '/admin' : next)
+      } else {
+        setError(res.message)
+        if (res.needsPayment) { setNeedsPayment(true); setExpiredEmail(form.email) }
+      }
+    } finally {
+      setBusy(false)
     }
-    setBusy(false)
   }
 
   if (loading || hasAccess) {
@@ -105,7 +109,7 @@ export default function LoginPage() {
 
       {/* ── Right: Login form ── */}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem 1.25rem', overflowY:'auto' }}>
-        <div style={{ width:'100%', maxWidth:'420px' }}>
+        <div style={{ width:'100%', maxWidth:'420px', animation: error ? 'shake 0.5s ease-in-out' : 'none' }}>
 
           {/* Mobile logo */}
           <div className="hide-md" style={{ display:'flex', alignItems:'center', gap:'0.625rem', marginBottom:'2.5rem', justifyContent:'center' }}>
@@ -183,7 +187,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
+      <style>{'@keyframes spin{to{transform:rotate(360deg)}}@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}'}</style>
     </div>
   )
 }

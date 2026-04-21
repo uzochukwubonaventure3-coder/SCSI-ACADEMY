@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import axios from 'axios'
 import { useAccess } from '@/hooks/useAccess'
+import { loadPaystack } from '@/utils/paystack'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -102,15 +103,6 @@ export default function PaywallGate({ children }: { children: React.ReactNode })
       })
   }, [])
 
-  // Paystack script
-  useEffect(() => {
-    if (document.getElementById('paystack-js')) return
-    const s = document.createElement('script')
-    s.id = 'paystack-js'
-    s.src = 'https://js.paystack.co/v1/inline.js'
-    document.head.appendChild(s)
-  }, [])
-
   // Days remaining from access context
   useEffect(() => {
     if (!user?.expiresAt) return
@@ -175,7 +167,19 @@ export default function PaywallGate({ children }: { children: React.ReactNode })
       const { data } = await axios.post(`${API}/api/paywall/register`, { ...reg, plan: selected.id })
       if (!data.success) { setMsg(data.message); setMsgType('error'); setBusy(false); return }
 
-      const handler = window.PaystackPop.setup({
+      const requiredFields = ['paystackKey', 'email', 'amountKobo', 'reference'] as const
+      for (const field of requiredFields) {
+        if (!data[field] && data[field] !== 0) {
+          throw new Error(`Missing Paystack response field: ${field}`)
+        }
+      }
+
+      const paystack = await loadPaystack()
+      if (!paystack || typeof paystack.setup !== 'function') {
+        throw new Error('Paystack is unavailable. Please reload the page and try again.')
+      }
+
+      const handler = paystack.setup({
         key:      data.paystackKey,
         email:    data.email,
         amount:   data.amountKobo,
@@ -195,10 +199,15 @@ export default function PaywallGate({ children }: { children: React.ReactNode })
               setMsg(`✅ Access unlocked for ${v.data.daysGranted} days. Welcome!`)
               setMsgType('success')
             } else {
-              setMsg('Verification failed. Please contact support.'); setMsgType('error')
+              throw new Error(v.data.message || 'Verification failed')
             }
-          } catch { setMsg('Verification error. Contact support.'); setMsgType('error') }
-          setBusy(false)
+          } catch (verificationError: unknown) {
+            const err = verificationError as { message?: string }
+            setMsg(err.message || 'Verification error. Contact support.')
+            setMsgType('error')
+          } finally {
+            setBusy(false)
+          }
         },
       })
       handler.openIframe()
@@ -211,10 +220,14 @@ export default function PaywallGate({ children }: { children: React.ReactNode })
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (busy) return
     setBusy(true); setMsg('')
-    const res = await login(loginF.email, loginF.password)
-    if (!res.success) { setMsg(res.message); setMsgType('error') }
-    setBusy(false)
+    try {
+      const res = await login(loginF.email, loginF.password)
+      if (!res.success) { setMsg(res.message); setMsgType('error') }
+    } finally {
+      setBusy(false)
+    }
   }
 
   // ── Paywall UI ────────────────────────────────────────────────────

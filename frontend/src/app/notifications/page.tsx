@@ -1,6 +1,9 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Bell, CheckCheck, FileText, Video, Megaphone } from 'lucide-react'
+import {
+  Bell, CheckCheck, FileText, Video, Megaphone,
+  Tag, TrendingDown, Sparkles, X
+} from 'lucide-react'
 import axios from 'axios'
 import Link from 'next/link'
 import { useAccess } from '@/hooks/useAccess'
@@ -8,23 +11,94 @@ import { useAccess } from '@/hooks/useAccess'
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 interface Notif {
-  id:number; type:string; title:string; body:string; link:string; is_read:boolean; created_at:string
+  id: number; type: string; title: string; body: string
+  link: string; is_read: boolean; created_at: string
 }
 
-const typeIcon = (t:string) =>
-  t==='video' ? <Video size={14}/> : t==='broadcast' ? <Megaphone size={14}/> : <FileText size={14}/>
+// Per-type config: icon, colours, label
+const TYPE_CONFIG: Record<string, {
+  icon: React.ReactNode; accent: string; bg: string; label: string
+}> = {
+  content:    { icon: <Video    size={14}/>, accent:'var(--gold)',   bg:'var(--gold-dim)',              label:'New Content'   },
+  broadcast:  { icon: <Megaphone size={14}/>,accent:'#5B5BD6',       bg:'rgba(91,91,214,0.12)',         label:'Announcement'  },
+  price_drop: { icon: <TrendingDown size={14}/>, accent:'#50c880',   bg:'rgba(80,200,128,0.12)',        label:'Price Drop'    },
+  promo:      { icon: <Tag      size={14}/>, accent:'#E89B1A',       bg:'rgba(232,155,26,0.12)',        label:'Promo'         },
+  video:      { icon: <Video    size={14}/>, accent:'var(--gold)',   bg:'var(--gold-dim)',              label:'Video'         },
+  default:    { icon: <Bell     size={14}/>, accent:'var(--txt-3)',  bg:'var(--bg-3)',                  label:'Notification'  },
+}
 
-const timeAgo = (d:string) => {
+const timeAgo = (d: string) => {
   const diff = Date.now() - new Date(d).getTime()
-  if (diff < 3600000)  return `${Math.floor(diff/60000)}m ago`
-  if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`
-  return new Date(d).toLocaleDateString('en-NG',{day:'numeric',month:'short'})
+  if (diff < 60000)    return 'Just now'
+  if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
+  if (diff < 604800000)return `${Math.floor(diff / 86400000)}d ago`
+  return new Date(d).toLocaleDateString('en-NG', { day:'numeric', month:'short' })
+}
+
+function NotifCard({ n, onDismiss }: { n: Notif; onDismiss: (id:number) => void }) {
+  const cfg = TYPE_CONFIG[n.type] ?? TYPE_CONFIG.default
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <div
+      style={{
+        display:'flex', gap:'0.875rem', padding:'1rem 1.125rem',
+        background: n.is_read ? 'var(--bg-2)' : 'var(--bg-3)',
+        border: `1px solid ${n.is_read ? 'var(--border)' : cfg.accent + '44'}`,
+        borderRadius:'var(--radius-md)',
+        transition:'all 0.18s', position:'relative',
+        transform: hovered ? 'translateY(-1px)' : 'none',
+        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.15)' : 'none',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Unread dot */}
+      {!n.is_read && (
+        <div style={{ position:'absolute', top:'0.875rem', right:'2.75rem', width:'7px', height:'7px', borderRadius:'50%', background: cfg.accent, flexShrink:0 }}/>
+      )}
+
+      {/* Icon */}
+      <div style={{ width:'38px', height:'38px', borderRadius:'10px', background: cfg.bg, border:`1px solid ${cfg.accent}22`, display:'flex', alignItems:'center', justifyContent:'center', color: cfg.accent, flexShrink:0 }}>
+        {cfg.icon}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', marginBottom:'0.25rem', flexWrap:'wrap' }}>
+          <span style={{ fontSize:'0.6rem', fontWeight:800, letterSpacing:'0.1em', textTransform:'uppercase', color: cfg.accent, padding:'0.1rem 0.45rem', borderRadius:'4px', background: cfg.bg, border:`1px solid ${cfg.accent}28`, flexShrink:0 }}>
+            {cfg.label}
+          </span>
+          <span style={{ fontSize:'0.68rem', color:'var(--txt-3)', marginLeft:'auto', flexShrink:0 }}>{timeAgo(n.created_at)}</span>
+        </div>
+        <p style={{ fontWeight: n.is_read ? 500 : 700, fontSize:'0.9rem', color:'var(--txt-1)', marginBottom: n.body ? '0.25rem' : 0, lineHeight:1.4 }}>
+          {n.title}
+        </p>
+        {n.body && (
+          <p style={{ fontSize:'0.8rem', color:'var(--txt-2)', lineHeight:1.6 }} dangerouslySetInnerHTML={{ __html: n.body }}/>
+        )}
+        {n.link && n.link !== '#' && (
+          <Link href={n.link} style={{ display:'inline-flex', alignItems:'center', gap:'0.25rem', marginTop:'0.5rem', fontSize:'0.78rem', fontWeight:700, color: cfg.accent, textDecoration:'none' }}>
+            View →
+          </Link>
+        )}
+      </div>
+
+      {/* Dismiss */}
+      <button onClick={() => onDismiss(n.id)}
+        style={{ width:'24px', height:'24px', borderRadius:'50%', background:'transparent', border:'none', color:'var(--txt-3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, opacity: hovered ? 1 : 0, transition:'opacity 0.15s' }}>
+        <X size={12}/>
+      </button>
+    </div>
+  )
 }
 
 export default function NotificationsPage() {
   const { token, hasAccess } = useAccess()
-  const [notifs, setNotifs] = useState<Notif[]>([])
-  const [loading, setLoading] = useState(true)
+  const [notifs,   setNotifs]   = useState<Notif[]>([])
+  const [filter,   setFilter]   = useState<'all' | 'unread' | 'content' | 'promo'>('all')
+  const [loading,  setLoading]  = useState(true)
 
   const getToken = useCallback(() =>
     token || (typeof window !== 'undefined' ? localStorage.getItem('scsi_access_token') : '') || ''
@@ -38,11 +112,10 @@ export default function NotificationsPage() {
         headers: { Authorization: `Bearer ${t}` }
       })
       if (data.success) setNotifs(data.data || [])
-    } catch { /* silent fail */ }
+    } catch { /* silent */ }
     setLoading(false)
   }, [getToken])
 
-  // Only fetch once we know we have a token
   useEffect(() => {
     if (hasAccess) load()
     else setLoading(false)
@@ -58,16 +131,48 @@ export default function NotificationsPage() {
     } catch { /* silent */ }
   }
 
-  const unread = notifs.filter(n => !n.is_read).length
+  // Dismiss = mark single as read + visually remove
+  const dismiss = async (id: number) => {
+    const t = getToken(); if (!t) return
+    setNotifs(p => p.filter(n => n.id !== id))
+    try {
+      await axios.patch(`${API}/api/notifications/read-all`, {}, {
+        headers: { Authorization: `Bearer ${t}` }
+      })
+    } catch { /* silent */ }
+  }
+
+  // Filter logic
+  const filtered = notifs.filter(n => {
+    if (filter === 'unread')  return !n.is_read
+    if (filter === 'content') return ['content','video','price_drop'].includes(n.type)
+    if (filter === 'promo')   return ['promo','broadcast'].includes(n.type)
+    return true
+  })
+
+  const unread      = notifs.filter(n => !n.is_read).length
+  const promoCount  = notifs.filter(n => ['promo','broadcast'].includes(n.type) && !n.is_read).length
+  const contentCount= notifs.filter(n => ['content','video','price_drop'].includes(n.type) && !n.is_read).length
+
+  type FilterKey = 'all' | 'unread' | 'content' | 'promo'
+  const filters: { key: FilterKey; label: string; count?: number }[] = [
+    { key:'all',     label:'All',         count: notifs.length   },
+    { key:'unread',  label:'Unread',      count: unread          },
+    { key:'content', label:'Content',     count: contentCount    },
+    { key:'promo',   label:'Promos',      count: promoCount      },
+  ]
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-0)', paddingTop:'90px' }}>
-      <div className="wrap" style={{ padding:'2rem 1.25rem 4rem', maxWidth:'680px' }}>
+    <div style={{ minHeight:'100vh', background:'var(--bg-0)', paddingTop:'80px' }}>
+      <div className="wrap" style={{ padding:'2rem 1.25rem 4rem', maxWidth:'700px' }}>
 
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'2rem', flexWrap:'wrap', gap:'1rem' }}>
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'1.75rem', flexWrap:'wrap', gap:'1rem' }}>
           <div>
-            <h1 className="h-serif" style={{ fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:700, marginBottom:'0.25rem' }}>Notifications</h1>
-            {unread > 0 && <p style={{ fontSize:'0.85rem', color:'var(--txt-3)' }}>{unread} unread</p>}
+            <h1 style={{ fontFamily:'var(--font-serif)', fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:700, marginBottom:'0.25rem' }}>Notifications</h1>
+            <p style={{ fontSize:'0.875rem', color:'var(--txt-3)' }}>
+              {unread > 0 ? <><strong style={{ color:'var(--txt-1)' }}>{unread}</strong> unread</> : 'All caught up'}
+            </p>
           </div>
           {unread > 0 && (
             <button onClick={markAllRead} className="btn btn-ghost btn-sm" style={{ display:'flex', alignItems:'center', gap:'0.375rem' }}>
@@ -76,43 +181,75 @@ export default function NotificationsPage() {
           )}
         </div>
 
+        {/* Filter pills */}
+        <div style={{ display:'flex', gap:'0.375rem', flexWrap:'wrap', marginBottom:'1.25rem' }}>
+          {filters.map(f => (
+            <button key={f.key} onClick={() => setFilter(f.key)}
+              style={{ display:'flex', alignItems:'center', gap:'0.375rem', padding:'0.375rem 0.875rem', borderRadius:'99px', border:`1.5px solid ${filter===f.key ? 'var(--gold)' : 'var(--border)'}`, background: filter===f.key ? 'var(--gold-dim)' : 'transparent', color: filter===f.key ? 'var(--gold)' : 'var(--txt-2)', fontSize:'0.8rem', fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}>
+              {f.label}
+              {f.count !== undefined && f.count > 0 && (
+                <span style={{ width:'18px', height:'18px', borderRadius:'50%', background: filter===f.key ? 'var(--gold)' : 'var(--bg-3)', color: filter===f.key ? '#080506' : 'var(--txt-2)', fontSize:'0.6rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  {f.count > 99 ? '99+' : f.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Loading skeletons */}
         {loading && (
           <div style={{ display:'flex', flexDirection:'column', gap:'0.625rem' }}>
             {Array(4).fill(0).map((_,i) => (
-              <div key={i} className="skeleton" style={{ height:'72px', borderRadius:'var(--radius-md)' }}/>
+              <div key={i} className="skeleton" style={{ height:'80px', borderRadius:'var(--radius-md)' }}/>
             ))}
           </div>
         )}
 
-        {!loading && notifs.length === 0 && (
+        {/* Empty state */}
+        {!loading && filtered.length === 0 && (
           <div style={{ textAlign:'center', padding:'4rem 2rem', background:'var(--bg-2)', border:'1px solid var(--border)', borderRadius:'var(--radius-xl)' }}>
-            <Bell size={36} color="rgba(201,162,75,0.3)" style={{ margin:'0 auto 1.25rem' }}/>
-            <h3 className="h-serif" style={{ fontSize:'1.125rem', fontWeight:700, marginBottom:'0.5rem' }}>No notifications yet</h3>
-            <p style={{ color:'var(--txt-3)', fontSize:'0.875rem' }}>You'll be notified when new content or announcements are posted.</p>
+            {filter === 'all' ? (
+              <>
+                <div style={{ width:'56px', height:'56px', borderRadius:'50%', background:'var(--bg-3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 1.25rem' }}>
+                  <Bell size={24} color="rgba(201,162,75,0.4)"/>
+                </div>
+                <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.125rem', fontWeight:700, marginBottom:'0.5rem' }}>No notifications yet</h3>
+                <p style={{ color:'var(--txt-3)', fontSize:'0.875rem' }}>You'll be notified when Coach Precious posts new content, drops prices, or shares special promos.</p>
+              </>
+            ) : (
+              <>
+                <Sparkles size={28} color="rgba(201,162,75,0.3)" style={{ margin:'0 auto 1rem', display:'block' }}/>
+                <p style={{ color:'var(--txt-3)', fontSize:'0.875rem' }}>No {filter} notifications.</p>
+              </>
+            )}
           </div>
         )}
 
-        <div style={{ display:'flex', flexDirection:'column', gap:'0.5rem' }}>
-          {notifs.map(n => (
-            <Link key={n.id} href={n.link || '/content'}
-              style={{ display:'flex', alignItems:'flex-start', gap:'0.875rem', padding:'1rem 1.125rem', background: n.is_read ? 'var(--bg-2)' : 'var(--bg-3)', border:`1px solid ${n.is_read ? 'var(--border)' : 'rgba(201,162,75,0.3)'}`, borderRadius:'var(--radius-md)', textDecoration:'none', transition:'all 0.18s', position:'relative' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor='var(--border-hover)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = n.is_read ? 'var(--border)' : 'rgba(201,162,75,0.3)' }}>
-              {!n.is_read && (
-                <div style={{ position:'absolute', top:'0.875rem', right:'0.875rem', width:'7px', height:'7px', borderRadius:'50%', background:'var(--gold)' }}/>
-              )}
-              <div style={{ width:'36px', height:'36px', borderRadius:'9px', background: n.is_read ? 'var(--bg-3)' : 'var(--gold-dim)', border:`1px solid ${n.is_read ? 'var(--border)' : 'rgba(201,162,75,0.2)'}`, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--gold)', flexShrink:0 }}>
-                {typeIcon(n.type)}
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <p style={{ fontWeight: n.is_read ? 500 : 700, fontSize:'0.9rem', color:'var(--txt-1)', marginBottom:'0.2rem', lineHeight:1.4 }}>{n.title}</p>
-                {n.body && <p style={{ fontSize:'0.8rem', color:'var(--txt-2)', lineHeight:1.6 }}>{n.body}</p>}
-              </div>
-              <span style={{ fontSize:'0.68rem', color:'var(--txt-3)', flexShrink:0, paddingTop:'0.1rem' }}>{timeAgo(n.created_at)}</span>
-            </Link>
-          ))}
-        </div>
+        {/* Notification list */}
+        {!loading && filtered.length > 0 && (
+          <div style={{ display:'flex', flexDirection:'column', gap:'0.5rem' }}>
+            {filtered.map(n => (
+              <NotifCard key={n.id} n={n} onDismiss={dismiss}/>
+            ))}
+          </div>
+        )}
+
+        {/* Bottom note */}
+        {!loading && notifs.length > 0 && (
+          <p style={{ textAlign:'center', marginTop:'2rem', fontSize:'0.72rem', color:'var(--txt-3)' }}>
+            Showing last {notifs.length} notification{notifs.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
+
+      <style>{`
+        .skeleton {
+          background: linear-gradient(90deg,var(--bg-2) 25%,var(--bg-3) 50%,var(--bg-2) 75%);
+          background-size:200% 100%;
+          animation: shimmer 1.5s ease infinite;
+        }
+        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+      `}</style>
     </div>
   )
 }

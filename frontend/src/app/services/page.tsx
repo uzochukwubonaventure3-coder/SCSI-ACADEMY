@@ -233,7 +233,7 @@ export default function ServicesPage() {
                         }}
                         onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
                         onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-                        Get Started — {plan.displayPrice}
+                        Get Started — ₦{(plan.price / 100).toLocaleString()}
                       </a>
                       {/* Secondary: WhatsApp for questions */}
                       <a

@@ -108,7 +108,7 @@ export default function SignupPage() {
               setMsg(`Welcome to SCSI Academy! ${selected.durationLabel} of access unlocked.`)
               setMsgOk(true)
               setShowWhatsApp(true)
-              if (typeof setAccessFromPayment === 'function') setAccessFromPayment(v.data.token, v.data.user)
+              if (typeof setAccessFromPayment === 'function') setAccessFromPayment(v.data.token, v.data.accessUntill)
               setTimeout(() => router.push('/content'), 4500)
             } else { setMsg('Verification failed. Contact support.'); setMsgOk(false) }
           } catch { setMsg('Verification error. Contact support.'); setMsgOk(false) }

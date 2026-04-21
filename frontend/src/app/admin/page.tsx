@@ -764,7 +764,7 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
       <p style={{fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--txt-3)',marginBottom:'0.5rem',paddingLeft:'0.25rem'}}>Preferences</p>
       <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'16px',overflow:'hidden',marginBottom:'1rem'}}>
         <Row iconBg={isDark?'#3B3B5C':'#E89B1A'} icon={isDark?<Moon size={16} color="white"/>:<Sun size={16} color="white"/>} label="Appearance" sub={isDark?'Dark Mode':'Light Mode'} onClick={()=>setSec('appearance')}/>
-        <Row iconBg="#E0484B" icon={<Lock size={16} color="white"/>} label="Password" sub="Change your password" onClick={()=>setSec('profile')} last/>
+        <Row iconBg="#E0484B" icon={<span style={{fontSize:'16px', display:'flex', alignItems:'center', justifyContent:'center'}}>🔒</span>} label="Password" sub="Change your password" onClick={()=>setSec('profile')} last/>
       </div>
 
       {/* System */}

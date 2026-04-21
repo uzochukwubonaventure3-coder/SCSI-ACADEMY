@@ -1062,7 +1062,7 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
           const status  = !cp.is_active?'inactive':expired?'expired':maxed?'maxed':'active'
           const statusColor = status==='active'?'#50c880':status==='inactive'?'var(--txt-3)':'#e07070'
           return (
-            <div key={cp.id} style={{display:'flex',alignItems:'center',gap:'0.875rem',padding:'0.875rem 1rem',background:'var(--bg-1)',border:`1px solid ${status==='active'?'rgba(201,162,75,0.15)':'var(--border)'}`,borderRadius:'var(--radius-md)',flexWrap:'wrap',gap:'0.75rem'}}>
+            <div key={cp.id} style={{display:'flex',alignItems:'center',gap:'0.875rem',padding:'0.875rem 1rem',background:'var(--bg-1)',border:`1px solid ${status==='active'?'rgba(201,162,75,0.15)':'var(--border)'}`,borderRadius:'var(--radius-md)',flexWrap:'wrap'}}>
               <div style={{display:'flex',alignItems:'center',gap:'0.75rem',flex:'0 0 auto'}}>
                 <div style={{padding:'0.375rem 0.75rem',background:'rgba(201,162,75,0.08)',border:'1px solid rgba(201,162,75,0.2)',borderRadius:'6px'}}>
                   <code style={{fontSize:'0.85rem',fontWeight:800,color:'var(--gold)',letterSpacing:'0.1em'}}>{cp.code}</code>

@@ -208,7 +208,7 @@ function VideoUploadField({value,onChange,token,onToast}:{value:string;onChange:
   )
 }
 
-// ── Blog Manager (FIXED: removed video_url) ──
+// ── Blog Manager ──
 function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [posts,setPosts]   = useState<BlogPost[]>([])
   const [form,setForm]     = useState({title:'',slug:'',excerpt:'',content:'',cover_image:'',tags:'',status:'draft'})
@@ -224,7 +224,6 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
   const save = async()=>{
     if(!form.title.trim()){toast.err('Title is required');return}
     setSaving(true)
-    // FIX: remove videoUrl – blogs don't have videos
     const payload={...form,tags:form.tags.split(',').map(t=>t.trim()).filter(Boolean)}
     try{
       if(editing) await axios.put(`${API}/api/admin/blog/${editing}`,payload,{headers:authH(token)})
@@ -267,7 +266,6 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
           </div>
           <div className="fgroup">
             <label className="fl">Content</label>
-            {/* <RichEditor value={form.content} onChange={v=>setForm(p=>({...p,content:v}))} placeholder="Write your full post content here…" minHeight="280px"/> */}
             <textarea value={form.content} className="fi" rows={6} onChange={e=>setForm(p=>({...p,content:e.target.value}))} placeholder="Write your post content here... (HTML supported)"/>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:'1rem',alignItems:'start'}}>
@@ -287,7 +285,7 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
             </div>
           </div>
           <div style={{display:'flex',gap:'0.625rem'}}>
-            <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity:saving?.7:1}}>
+            <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity: saving ? 0.7 : 1}}>
               {saving?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Saving…</>:<><Send size={13}/>{editing?'Update':'Publish'}</>}
             </button>
             <button onClick={()=>{setShowForm(false);setEditing(null)}} className="btn btn-ghost btn-sm">Cancel</button>
@@ -321,7 +319,7 @@ function BlogManager({token,toast}:{token:string;toast:ReturnType<typeof useToas
   )
 }
 
-// ── Video Manager (unchanged) ──
+// ── Video Manager ──
 function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [videos,setVideos] = useState<VideoPost[]>([])
   const [form,setForm]     = useState({title:'',slug:'',description:'',video_url:'',duration:'',tags:'',status:'draft'})
@@ -401,7 +399,7 @@ function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToa
             </div>
           </div>
           <div style={{display:'flex',gap:'0.625rem'}}>
-            <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity:saving?.7:1}}>
+            <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity: saving ? 0.7 : 1}}>
               {saving?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Saving…</>:<><Send size={13}/>{editing?'Update':'Save Video'}</>}
             </button>
             <button onClick={()=>{setShowForm(false);setEditing(null)}} className="btn btn-ghost btn-sm">Cancel</button>
@@ -433,7 +431,7 @@ function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToa
   )
 }
 
-// ── Broadcast Messaging (unchanged) ──
+// ── Broadcast Messaging ──
 function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [form,setForm]     = useState({subject:'',body:'',audience:'all'})
   const [sending,setSending] = useState(false)
@@ -484,7 +482,7 @@ function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof us
             <label className="fl">Message Body</label>
             <textarea value={form.body} className="fi" rows={5} style={{resize:'vertical'}} placeholder="Write your message here. HTML is supported." onChange={e=>setForm(p=>({...p,body:e.target.value}))}/>
           </div>
-          <button onClick={send} disabled={sending} className="btn btn-gold" style={{alignSelf:'flex-start',opacity:sending?.7:1}}>
+          <button onClick={send} disabled={sending} className="btn btn-gold" style={{alignSelf:'flex-start',opacity: sending ? 0.7 : 1}}>
             {sending?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Sending…</>:<><Send size={13}/>Send Message</>}
           </button>
         </div>
@@ -508,7 +506,7 @@ function BroadcastManager({token,toast}:{token:string;toast:ReturnType<typeof us
   )
 }
 
-// ── Students Manager (unchanged) ──
+// ── Students Manager ──
 function StudentsManager({token,toast,onImpersonate}:{token:string;toast:ReturnType<typeof useToast>;onImpersonate:(s:Student)=>void}) {
   const [students,setStudents] = useState<Student[]>([])
   const [search,setSearch]     = useState('')
@@ -603,7 +601,7 @@ function StudentsManager({token,toast,onImpersonate}:{token:string;toast:ReturnT
   )
 }
 
-// ── Contacts (unchanged) ──
+// ── Contacts ──
 function ContactsView({token}:{token:string}) {
   const [contacts,setContacts] = useState<Contact[]>([])
   const [expanded,setExpanded] = useState<number|null>(null)
@@ -637,7 +635,7 @@ function ContactsView({token}:{token:string}) {
   )
 }
 
-// ── Impersonation student view (unchanged) ──
+// ── Impersonation student view ──
 function ImpersonatedView({student,onExit}:{student:Student;onExit:()=>void}) {
   const days = student.expires_at ? Math.max(0,Math.ceil((new Date(student.expires_at).getTime()-Date.now())/86400000)) : null
   return (
@@ -676,7 +674,7 @@ function ImpersonatedView({student,onExit}:{student:Student;onExit:()=>void}) {
   )
 }
 
-// ── Admin Settings (FIXED: browser-only APIs guarded) ──
+// ── Admin Settings ──
 function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const {isDark,toggleTheme} = useTheme()
   const [sec,setSec]   = useState<'profile'|'appearance'|'system'|null>(null)
@@ -688,7 +686,6 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
   const [saving,setSaving] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Load avatar from localStorage only on client
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('scsi_admin_avatar')
@@ -709,7 +706,6 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
     r.readAsDataURL(f)
   }
 
-  // Settings row component (inline)
   const Row = ({iconBg,icon,label,sub,onClick,danger=false,last=false}:{iconBg:string;icon:React.ReactNode;label:string;sub?:string;onClick:()=>void;danger?:boolean;last?:boolean}) => (
     <button onClick={onClick} style={{width:'100%',display:'flex',alignItems:'center',gap:'0.875rem',padding:'0.875rem 1rem',background:'transparent',border:'none',cursor:'pointer',textAlign:'left',borderBottom:last?'none':'1px solid var(--border)',transition:'background 0.12s'}}
       onMouseEnter={e=>e.currentTarget.style.background='var(--bg-3)'}
@@ -739,7 +735,6 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
     <div style={{maxWidth:'520px'}}>
       <h2 className="h-serif" style={{fontSize:'1.25rem',fontWeight:700,marginBottom:'1.5rem'}}>Settings</h2>
 
-      {/* Profile card */}
       <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'16px',overflow:'hidden',marginBottom:'1rem'}}>
         <div style={{padding:'1.125rem 1rem',display:'flex',alignItems:'center',gap:'1rem',borderBottom:'1px solid var(--border)'}}>
           <div style={{position:'relative',flexShrink:0}}>
@@ -760,20 +755,17 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
         <Row iconBg="#5B5BD6" icon={<User size={16} color="white"/>} label="Edit Profile" sub="Name, bio, avatar" onClick={()=>setSec('profile')} last/>
       </div>
 
-      {/* Preferences */}
       <p style={{fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--txt-3)',marginBottom:'0.5rem',paddingLeft:'0.25rem'}}>Preferences</p>
       <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'16px',overflow:'hidden',marginBottom:'1rem'}}>
         <Row iconBg={isDark?'#3B3B5C':'#E89B1A'} icon={isDark?<Moon size={16} color="white"/>:<Sun size={16} color="white"/>} label="Appearance" sub={isDark?'Dark Mode':'Light Mode'} onClick={()=>setSec('appearance')}/>
         <Row iconBg="#E0484B" icon={<span style={{fontSize:'16px', display:'flex', alignItems:'center', justifyContent:'center'}}>🔒</span>} label="Password" sub="Change your password" onClick={()=>setSec('profile')} last/>
       </div>
 
-      {/* System */}
       <p style={{fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--txt-3)',marginBottom:'0.5rem',paddingLeft:'0.25rem'}}>System</p>
       <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'16px',overflow:'hidden',marginBottom:'1.5rem'}}>
         <Row iconBg="#059669" icon={<Shield size={16} color="white"/>} label="Deployment Config" sub="Cloudinary, Paystack, SMTP" onClick={()=>setSec('system')} last/>
       </div>
 
-      {/* Sign out */}
       <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'16px',overflow:'hidden'}}>
         <button onClick={()=>{
             if (typeof window !== 'undefined') {
@@ -789,7 +781,6 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
         </button>
       </div>
 
-      {/* Slide-in panels */}
       {sec==='profile'&&(
         <Panel title="Admin Profile" onBack={()=>setSec(null)}>
           <div style={{display:'flex',flexDirection:'column',gap:'1.125rem'}}>
@@ -851,8 +842,7 @@ function AdminSettings({token,toast}:{token:string;toast:ReturnType<typeof useTo
   )
 }
 
-
-// ── Gallery Manager (unchanged) ──
+// ── Gallery Manager ──
 function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [images,setImages] = useState<{id:number;title:string;image_url:string;category:string;created_at:string}[]>([])
   const [uploading,setUploading] = useState(false)
@@ -974,7 +964,7 @@ function GalleryManager({token,toast}:{token:string;toast:ReturnType<typeof useT
   )
 }
 
-// ── Coupons Manager (unchanged) ──
+// ── Coupons Manager ──
 function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [coupons,setCoupons]   = useState<{id:number;code:string;discount_percent:number;expires_at:string|null;usage_limit:number|null;used_count:number;is_active:boolean;created_at:string}[]>([])
   const [form,setForm]         = useState({code:'',discount_percent:10,expires_at:'',usage_limit:''})
@@ -1046,7 +1036,7 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
             </div>
           )}
           <div style={{display:'flex',gap:'0.625rem'}}>
-            <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity:saving?.7:1}}>
+            <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity: saving ? 0.7 : 1}}>
               {saving?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Saving…</>:<><Tag size={13}/>Create Coupon</>}
             </button>
             <button onClick={()=>setShowForm(false)} className="btn btn-ghost btn-sm">Cancel</button>
@@ -1091,7 +1081,7 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
   )
 }
 
-// ── System Status (unchanged) ──
+// ── System Status ──
 function SystemStatus({token}:{token:string}) {
   const [data,setData] = useState<{
     api?:{status:string;uptime:number;env:string}
@@ -1179,7 +1169,7 @@ function SystemStatus({token}:{token:string}) {
   )
 }
 
-// ── MAIN ADMIN PAGE (FIXED: mounted guard, localStorage only on client) ──
+// ── MAIN ADMIN PAGE ──
 export default function AdminPage() {
   const [token, setToken] = useState<string|null>(null)
   const [mounted, setMounted] = useState(false)
@@ -1192,7 +1182,6 @@ export default function AdminPage() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const toast = useToast()
 
-  // Read token only on client
   useEffect(() => {
     setMounted(true)
     const t = localStorage.getItem('scsi_admin_token') || localStorage.getItem('scsi_access_token')
@@ -1305,7 +1294,7 @@ export default function AdminPage() {
         </div>
       </aside>
 
-      {/* Mobile header & overlay sidebar (same as before) */}
+      {/* Mobile header & overlay sidebar */}
       <div className="admin-mob-hdr" style={{ display: 'none', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: 'var(--bg-1)', borderBottom: '1px solid var(--border)', flexShrink: 0, position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
           <button onClick={() => setMobileSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--txt-2)', cursor: 'pointer', display: 'flex', padding: '0.25rem' }}>
@@ -1340,7 +1329,7 @@ export default function AdminPage() {
         </div>
       </aside>
 
-      {/* Impersonation banner (same as before) */}
+      {/* Impersonation overlay */}
       {impersonating && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-0)', overflowY: 'auto', animation: 'fadeUp 0.3s ease both' }}>
           <div style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--bg-1)', borderBottom: '1px solid var(--border)', padding: '0.875rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -1469,7 +1458,7 @@ export default function AdminPage() {
   )
 }
 
-// Remaining helper views (unchanged but need to be defined)
+// ── Remaining helper views ──
 function TestimonialsManager({token,toast}:{token:string;toast:ReturnType<typeof useToast>}) {
   const [items,setItems] = useState<{id:number;name:string;role:string;quote:string;approved:boolean;created_at:string}[]>([])
   const load = useCallback(async()=>{try{const{data}=await axios.get(`${API}/api/admin/testimonials`,{headers:authH(token)});setItems(data.data||[])}catch{}},[token])

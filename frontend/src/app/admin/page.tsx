@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FileText, Video, Users, Mail, MessageSquare,
   LogOut, Plus, Trash2, Edit3, Check, X, ChevronDown, ChevronRight, Wallet, TrendingUp,
   Send, BookOpen, UserCheck, Eye, Activity, Search, ImageIcon, Tag, Menu, Crown,
-  BarChart2, Camera, User, Moon, Sun, Icons,
+  BarChart2, Camera, User, Moon, Sun,
   Shield, CreditCard, Bell, RefreshCw, Upload, Link as LinkIcon
 } from 'lucide-react'
 

@@ -22,15 +22,31 @@ interface BlogPost {
   cover_image?:string; tags:string[]; status:string; createdAt:string; created_at:string
 }
 interface VideoPost {
-  id:number; title:string; slug:string; description:string; video_url?:string
-  thumbnailUrl?:string; thumbnail_url?:string; duration:string; tags:string[]
-  status:string; createdAt:string; created_at:string
-  price_kobo:number; is_free:boolean; category?:string; purchased?:boolean
-  preview_url?:string|null; preview_end_seconds?:number
-  video_url?:string|null
-  purchase_count?:number; effective_price_kobo?:number
-  discount_active?:boolean; active_discount_pct?:number
-  outcomes?:string[]|null; lessons?:string[]|null; target_audience?:string|null
+  id:number; 
+  title:string; 
+  slug:string; 
+  description:string; 
+  video_url?:string
+  thumbnailUrl?:string; 
+  thumbnail_url?:string; 
+  duration:string; 
+  tags:string[]
+  status:string; 
+  createdAt:string; 
+  created_at:string
+  price_kobo:number; 
+  is_free:boolean; 
+  category?:string; 
+  purchased?:boolean
+  preview_url?:string|null; 
+  preview_end_seconds?:number
+  purchase_count?:number;
+   effective_price_kobo?:number
+  discount_active?:boolean;
+  active_discount_pct?:number
+  outcomes?:string[]|null; 
+  lessons?:string[]|null; 
+  target_audience?:string|null
 }
 
 const placeholderVideos: VideoPost[] = [

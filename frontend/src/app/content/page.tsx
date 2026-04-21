@@ -465,7 +465,7 @@ export default function ContentPage() {
               </div>
             </div>
           </div>
-          <RecommendationsRow videoId={player.videoId} token={getT()} onPlay={handleVideoClick} isRead={isRead}/>
+          <RecommendationsRow videoId={player.videoId} token={getT()} onPlay={(type, id) => handleVideoClick(type as "blog" | "video", id)} isRead={isRead}/>
         </>
       )}
 

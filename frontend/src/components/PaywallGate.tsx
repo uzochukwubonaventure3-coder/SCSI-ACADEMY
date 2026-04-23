@@ -179,17 +179,8 @@ export default function PaywallGate({ children }: { children: React.ReactNode })
         throw new Error('Paystack is unavailable. Please reload the page and try again.')
       }
 
-      const handler = paystack.setup({
-        key:      data.paystackKey,
-        email:    data.email,
-        amount:   data.amountKobo,
-        ref:      data.reference,
-        currency: 'NGN',
-        onClose: () => {
-          setMsg('Payment window was closed. Click "Pay" again to complete your subscription.')
-          setMsgType('error'); setBusy(false)
-        },
-        callback: async (response) => {
+      const handlePaymentCallback = (response: { reference: string }) => {
+        void (async () => {
           setMsg('Verifying payment…'); setMsgType('success')
           try {
             const v = await axios.post(`${API}/api/paywall/verify`, { reference: response.reference })
@@ -208,7 +199,20 @@ export default function PaywallGate({ children }: { children: React.ReactNode })
           } finally {
             setBusy(false)
           }
+        })()
+      }
+
+      const handler = paystack.setup({
+        key:      data.paystackKey,
+        email:    data.email,
+        amount:   data.amountKobo,
+        ref:      data.reference,
+        currency: 'NGN',
+        onClose: () => {
+          setMsg('Payment window was closed. Click "Pay" again to complete your subscription.')
+          setMsgType('error'); setBusy(false)
         },
+        callback: handlePaymentCallback,
       })
       handler.openIframe()
     } catch (err: unknown) {

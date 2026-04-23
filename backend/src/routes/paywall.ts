@@ -14,6 +14,21 @@ const router     = Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback'
 const PAYSTACK   = process.env.PAYSTACK_SECRET_KEY || ''
 
+function ensurePaystackConfig() {
+  return !!PAYSTACK && !!process.env.PAYSTACK_PUBLIC_KEY
+}
+
+function getAxiosMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message
+      || error.response?.data?.error
+      || error.message
+      || fallback
+  }
+  if (error instanceof Error) return error.message
+  return fallback
+}
+
 // ── Plan definitions ──────────────────────────────────────────────────
 type PlanId = 'academy' | '1on1_monthly' | '1on1_3months' | '1on1_6months'
 
@@ -117,6 +132,10 @@ router.post('/register', async (req:Request, res:Response) => {
   const { fullName, email, password, plan } = result.data
   const selectedPlan = getPlans()[plan]
 
+  if (!ensurePaystackConfig()) {
+    return res.status(500).json({ success:false, message:'Paystack is not configured on the server' })
+  }
+
   try {
     // Check existing
     const existing = await query(`SELECT id, is_active, expires_at, plan FROM content_users WHERE email=$1`, [email])
@@ -161,7 +180,13 @@ router.post('/register', async (req:Request, res:Response) => {
           ],
         },
       },
-      { headers:{ Authorization:`Bearer ${PAYSTACK}` } }
+      {
+        headers:{
+          Authorization:`Bearer ${PAYSTACK}`,
+          'Content-Type':'application/json',
+        },
+        timeout: 15000,
+      }
     )
 
     res.json({
@@ -174,14 +199,14 @@ router.post('/register', async (req:Request, res:Response) => {
     })
   } catch (err:unknown) {
     console.error('[Register]', err)
-    const e = err as { response?:{data?:{message?:string}};message?:string }
-    res.status(500).json({ success:false, message:e.response?.data?.message || e.message || 'Registration failed' })
+    res.status(500).json({ success:false, message:getAxiosMessage(err, 'Registration failed') })
   }
 })
 
 // ── POST /api/paywall/verify ──────────────────────────────────────────
 router.post('/verify', async (req:Request, res:Response) => {
   const { reference } = req.body
+  if (!ensurePaystackConfig()) return res.status(500).json({ success:false, message:'Paystack is not configured on the server' })
   if (!reference) return res.status(400).json({ success:false, message:'Reference required' })
   const client = await pool.connect()
   try {
@@ -199,7 +224,10 @@ router.post('/verify', async (req:Request, res:Response) => {
     // Verify with Paystack
     const { data:ps } = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
-      { headers:{ Authorization:`Bearer ${PAYSTACK}` } }
+      {
+        headers:{ Authorization:`Bearer ${PAYSTACK}` },
+        timeout: 15000,
+      }
     )
     if (ps.data.status !== 'success') {
       await client.query('ROLLBACK')
@@ -224,12 +252,12 @@ router.post('/verify', async (req:Request, res:Response) => {
     await client.query('COMMIT')
     const user = await query(`SELECT * FROM content_users WHERE id=$1`, [user_id])
     const token = issueAccessToken(user.rows[0])
-    sendWelcomeEmail(user.rows[0].email, user.rows[0].full_name, selectedPlan.label).catch(console.error)
+    sendWelcomeEmail(user.rows[0].email, user.rows[0].full_name, selectedPlan.label, user.rows[0].expires_at).catch(console.error)
     res.json({ success:true, token, daysGranted:selectedPlan.durationDays, planLabel:selectedPlan.label, includesAllVideos:selectedPlan.includesAllVideos })
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('[Verify]', err)
-    res.status(500).json({ success:false, message:'Verification failed' })
+    res.status(500).json({ success:false, message:getAxiosMessage(err, 'Verification failed') })
   } finally { client.release() }
 })
 

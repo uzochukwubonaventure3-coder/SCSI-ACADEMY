@@ -11,6 +11,21 @@ const PAYSTACK = process.env.PAYSTACK_SECRET_KEY || ''
 // ── helpers ────────────────────────────────────────────────────────────
 const naira = (k: number) => `₦${(k / 100).toLocaleString('en-NG')}`
 
+function ensurePaystackConfig() {
+  return !!PAYSTACK && !!process.env.PAYSTACK_PUBLIC_KEY
+}
+
+function getAxiosMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message
+      || error.response?.data?.error
+      || error.message
+      || fallback
+  }
+  if (error instanceof Error) return error.message
+  return fallback
+}
+
 async function ensureWallet(userId: number): Promise<{ balance_kobo: number }> {
   const r = await query(
     `INSERT INTO wallets (user_id, balance_kobo) VALUES ($1, 0)
@@ -43,6 +58,10 @@ router.post('/fund/initialize', requireStudent, async (req: AuthRequest, res: Re
   const userId    = req.userId!
   const { amount_kobo } = req.body
 
+  if (!ensurePaystackConfig()) {
+    return res.status(500).json({ success: false, message: 'Paystack is not configured on the server' })
+  }
+
   if (!amount_kobo || amount_kobo < 10000) { // min ₦100
     return res.status(400).json({ success: false, message: 'Minimum funding amount is ₦100' })
   }
@@ -69,7 +88,13 @@ router.post('/fund/initialize', requireStudent, async (req: AuthRequest, res: Re
           custom_fields: [{ display_name: 'Type', variable_name: 'type', value: 'Wallet Top-up' }],
         },
       },
-      { headers: { Authorization: `Bearer ${PAYSTACK}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${PAYSTACK}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      }
     )
 
     res.json({
@@ -82,7 +107,7 @@ router.post('/fund/initialize', requireStudent, async (req: AuthRequest, res: Re
     })
   } catch (err) {
     console.error('[Wallet Fund Init]', err)
-    res.status(500).json({ success: false, message: 'Failed to initialize payment' })
+    res.status(500).json({ success: false, message: getAxiosMessage(err, 'Failed to initialize payment') })
   }
 })
 
@@ -91,6 +116,10 @@ router.post('/fund/initialize', requireStudent, async (req: AuthRequest, res: Re
 router.post('/fund/verify', requireStudent, async (req: AuthRequest, res: Response) => {
   const userId    = req.userId!
   const { reference } = req.body
+
+  if (!ensurePaystackConfig()) {
+    return res.status(500).json({ success: false, message: 'Paystack is not configured on the server' })
+  }
 
   if (!reference) return res.status(400).json({ success: false, message: 'Reference required' })
 
@@ -111,12 +140,20 @@ router.post('/fund/verify', requireStudent, async (req: AuthRequest, res: Respon
     // 2. Verify with Paystack
     const { data: psData } = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
-      { headers: { Authorization: `Bearer ${PAYSTACK}` } }
+      {
+        headers: { Authorization: `Bearer ${PAYSTACK}` },
+        timeout: 15000,
+      }
     )
 
     if (psData.data.status !== 'success') {
       await client.query('ROLLBACK')
       return res.status(402).json({ success: false, message: 'Payment not successful' })
+    }
+
+    if (Number(psData.data.metadata?.user_id) !== userId) {
+      await client.query('ROLLBACK')
+      return res.status(403).json({ success: false, message: 'Payment does not belong to this user' })
     }
 
     const amount_kobo = psData.data.amount
@@ -152,7 +189,7 @@ router.post('/fund/verify', requireStudent, async (req: AuthRequest, res: Respon
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('[Wallet Fund Verify]', err)
-    res.status(500).json({ success: false, message: 'Failed to verify payment' })
+    res.status(500).json({ success: false, message: getAxiosMessage(err, 'Failed to verify payment') })
   } finally {
     client.release()
   }
@@ -209,7 +246,13 @@ router.post('/purchase/video', requireStudent, async (req: AuthRequest, res: Res
 
     // 3b. Apply coupon discount if provided
     let finalPrice = video.price_kobo
-    let couponRow: { id:number; discount_percent:number; usage_limit:number|null; used_count:number } | null = null
+    let couponRow: {
+      id: number
+      discount_percent: number
+      usage_limit: number | null
+      used_count: number
+      expires_at: string | null
+    } | null = null
     if (coupon_id) {
       const couponRes = await client.query(
         `SELECT * FROM coupons WHERE id=$1 AND is_active=TRUE FOR UPDATE`,
@@ -310,6 +353,10 @@ router.post('/purchase/video/paystack', requireStudent, async (req: AuthRequest,
   const userId    = req.userId!
   const { video_id, coupon_id } = req.body
 
+  if (!ensurePaystackConfig()) {
+    return res.status(500).json({ success: false, message: 'Paystack is not configured on the server' })
+  }
+
   if (!video_id) return res.status(400).json({ success: false, message: 'video_id required' })
 
   try {
@@ -382,7 +429,13 @@ router.post('/purchase/video/paystack', requireStudent, async (req: AuthRequest,
           ],
         },
       },
-      { headers: { Authorization: `Bearer ${PAYSTACK}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${PAYSTACK}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      }
     )
 
     res.json({
@@ -397,7 +450,7 @@ router.post('/purchase/video/paystack', requireStudent, async (req: AuthRequest,
     })
   } catch (err) {
     console.error('[Video Paystack Init]', err)
-    res.status(500).json({ success: false, message: 'Failed to initialize payment' })
+    res.status(500).json({ success: false, message: getAxiosMessage(err, 'Failed to initialize payment') })
   }
 })
 
@@ -406,6 +459,9 @@ router.post('/purchase/video/paystack', requireStudent, async (req: AuthRequest,
 router.post('/purchase/video/paystack/verify', requireStudent, async (req: AuthRequest, res: Response) => {
   const userId    = req.userId!
   const { reference } = req.body
+  if (!ensurePaystackConfig()) {
+    return res.status(500).json({ success: false, message: 'Paystack is not configured on the server' })
+  }
   if (!reference) return res.status(400).json({ success: false, message: 'Reference required' })
 
   const client = await pool.connect()
@@ -425,7 +481,10 @@ router.post('/purchase/video/paystack/verify', requireStudent, async (req: AuthR
     // Verify with Paystack
     const { data: psData } = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
-      { headers: { Authorization: `Bearer ${PAYSTACK}` } }
+      {
+        headers: { Authorization: `Bearer ${PAYSTACK}` },
+        timeout: 15000,
+      }
     )
 
     if (psData.data.status !== 'success') {
@@ -461,7 +520,7 @@ router.post('/purchase/video/paystack/verify', requireStudent, async (req: AuthR
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('[Video Paystack Verify]', err)
-    res.status(500).json({ success: false, message: 'Verification failed' })
+    res.status(500).json({ success: false, message: getAxiosMessage(err, 'Verification failed') })
   } finally {
     client.release()
   }

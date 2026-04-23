@@ -10,12 +10,16 @@ router.post('/mark', requireAuth, async (req: AuthRequest, res: Response) => {
   if (!contentType || !contentId || !['blog','video'].includes(contentType)) {
     return res.status(400).json({ success: false, message: 'contentType (blog|video) and contentId required' })
   }
+  const userId = req.userId
+  if (!userId) {
+    return res.status(403).json({ success: false, message: 'Student account required' })
+  }
   try {
     await query(
       `INSERT INTO content_reads (user_id, content_type, content_id)
        VALUES ($1, $2, $3)
        ON CONFLICT (user_id, content_type, content_id) DO NOTHING`,
-      [req.admin!.id ?? (req as { user?: { id: number } }).user?.id, contentType, contentId]
+      [userId, contentType, contentId]
     )
     res.json({ success: true })
   } catch (err) {
@@ -27,7 +31,10 @@ router.post('/mark', requireAuth, async (req: AuthRequest, res: Response) => {
 // GET /api/progress — get all reads for current user
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as { user?: { id: number } }).user?.id || (req.admin as { id?: number })?.id
+    const userId = req.userId
+    if (!userId) {
+      return res.status(403).json({ success: false, message: 'Student account required' })
+    }
     const result = await query(
       `SELECT content_type, content_id, read_at FROM content_reads WHERE user_id = $1`,
       [userId]

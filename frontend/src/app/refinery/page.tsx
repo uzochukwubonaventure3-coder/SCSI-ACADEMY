@@ -14,6 +14,7 @@ export default function RefineryPage() {
     biggestHurdle: '',
     whatsappNumber: '',
     preferredSession: 'Morning Cohort' as SessionTime,
+    email: '',
   })
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
@@ -111,7 +112,7 @@ export default function RefineryPage() {
           </div>
 
           <a
-            href={`https://wa.me/2349018053015?text=${encodeURIComponent('Hello Coach Precious! I just registered for the SCSI Refinery programme. I am excited to begin my transformation journey!')}`}
+            href="https://wa.me/2349018053015"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-gold"
@@ -249,6 +250,23 @@ export default function RefineryPage() {
                   <option>Evening Cohort</option>
                 </select>
               </div>
+            </div>
+
+            {/* Email for follow-up broadcasts */}
+            <div>
+              <label style={labelStyle}>
+                Email Address <span style={{ opacity: 0.6, fontWeight: 400 }}>(for programme updates)</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handle}
+                placeholder="your@email.com"
+                style={inputStyle}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(212,175,55,0.6)')}
+                onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
+              />
             </div>
 
             {status === 'error' && (

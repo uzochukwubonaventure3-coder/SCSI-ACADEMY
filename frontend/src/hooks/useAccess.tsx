@@ -8,7 +8,7 @@ export interface ContentUser {
   id?: number
   email: string
   fullName: string
-  plan?: 'monthly' | 'quarterly'
+  plan?: 'monthly' | 'quarterly' | 'academy' | '1on1_monthly' | '1on1_3months' | '1on1_6months' | string
   expiresAt?: string | null
   phone?: string
   bio?: string
@@ -53,6 +53,22 @@ function setCookie(t: string) {
 function clearCookie() {
   if (typeof document === 'undefined') return
   document.cookie = 'scsi_access_token=; path=/; max-age=0; SameSite=Strict'
+}
+
+
+// ── Public routes that don't require authentication ───────────────────
+export function isPublicRoute(pathname: string): boolean {
+  const PUBLIC_ROUTES = [
+    '/', '/about', '/services', '/contact', '/blog', '/gallery',
+    '/refinery', '/testify', '/privacy', '/login', '/signup',
+    '/verify-email', '/forgot-password', '/reset-password',
+  ]
+  // Exact match or starts with /blog/ (individual blog posts are public)
+  return (
+    PUBLIC_ROUTES.includes(pathname) ||
+    pathname.startsWith('/blog/') ||
+    pathname.startsWith('/videos/')
+  )
 }
 
 export function AccessProvider({ children }: { children: React.ReactNode }) {

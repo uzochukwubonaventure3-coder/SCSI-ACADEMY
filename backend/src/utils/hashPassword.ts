@@ -6,11 +6,19 @@
 import bcrypt from 'bcryptjs'
 
 const password = process.argv[2]
-if (!password) {
-  console.error('Usage: npx tsx src/utils/hashPassword.ts <your_password>')
-  process.exit(1)
+
+async function main() {
+  if (!password) {
+    console.error('Usage: npx tsx src/utils/hashPassword.ts <your_password>')
+    process.exit(1)
+  }
+
+  const hash = await bcrypt.hash(password, 12)
+  console.log('\nCopy this into your .env file:\n')
+  console.log(`ADMIN_PASSWORD_HASH=${hash}\n`)
 }
 
-const hash = await bcrypt.hash(password, 12)
-console.log('\n✅ Copy this into your .env file:\n')
-console.log(`ADMIN_PASSWORD_HASH=${hash}\n`)
+main().catch((error) => {
+  console.error('Failed to hash password:', error)
+  process.exit(1)
+})

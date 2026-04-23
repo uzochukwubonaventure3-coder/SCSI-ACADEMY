@@ -6,12 +6,12 @@ const router = Router()
 
 router.post('/', validate(refinerySchema), async (req: Request, res: Response) => {
   try {
-    const { fullName, levelOrProfession, primaryGoal, biggestHurdle, whatsappNumber, preferredSession } = req.body
+    const { fullName, levelOrProfession, primaryGoal, biggestHurdle, whatsappNumber, preferredSession, email } = req.body
     await query(
       `INSERT INTO refinery_registrations
-         (full_name, level_or_profession, primary_goal, biggest_hurdle, whatsapp_number, preferred_session)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [fullName, levelOrProfession, primaryGoal, biggestHurdle, whatsappNumber, preferredSession]
+         (full_name, level_or_profession, primary_goal, biggest_hurdle, whatsapp_number, preferred_session, email)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [fullName, levelOrProfession, primaryGoal, biggestHurdle, whatsappNumber, preferredSession, email || null]
     )
     res.status(201).json({
       success: true,

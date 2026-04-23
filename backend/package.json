@@ -9,7 +9,7 @@
     "db:migrate": "tsx src/config/migrate.ts",
     "db:migrate-paywall": "tsx src/config/migrate-paywall.ts",
     "db:migrate-v2": "tsx src/config/migrate-v2.ts",
-    "db:migrate:all": "tsx src/config/migrate.ts && tsx src/config/migrate-paywall.ts && tsx src/config/migrate-v2.ts && tsx src/config/migrate-v3.ts && tsx src/config/migrate-v4.ts && tsx src/config/migrate-v5.ts && tsx src/config/migrate-v6.ts && tsx src/config/migrate-v7.ts && tsx src/config/migrate-v8.ts && tsx src/config/migrate-v9.ts && tsx src/config/migrate-v10.ts",
+    "db:migrate:all": "tsx src/config/migrate.ts && tsx src/config/migrate-paywall.ts && tsx src/config/migrate-v2.ts && tsx src/config/migrate-v3.ts && tsx src/config/migrate-v4.ts && tsx src/config/migrate-v5.ts && tsx src/config/migrate-v6.ts && tsx src/config/migrate-v7.ts && tsx src/config/migrate-v8.ts && tsx src/config/migrate-v9.ts && tsx src/config/migrate-v10.ts && tsx src/config/migrate-v11.ts",
     "hash-password": "tsx src/utils/hashPassword.ts",
     "db:migrate-v3": "tsx src/config/migrate-v3.ts",
     "db:migrate-v4": "tsx src/config/migrate-v4.ts",
@@ -18,7 +18,8 @@
     "db:migrate-v7": "tsx src/config/migrate-v7.ts",
     "db:migrate-v8": "tsx src/config/migrate-v8.ts",
     "db:migrate-v9": "tsx src/config/migrate-v9.ts",
-    "db:migrate-v10": "tsx src/config/migrate-v10.ts"
+    "db:migrate-v10": "tsx src/config/migrate-v10.ts",
+    "db:migrate-v11": "tsx src/config/migrate-v11.ts"
   },
   "dependencies": {
     "axios": "^1.7.9",

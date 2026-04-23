@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, Sun, Moon, Settings, LogOut, User, Bell } from 'lucide-react'
+import axios from 'axios'
 import { useTheme } from '@/hooks/useTheme'
 import { useAccess } from '@/hooks/useAccess'
 import { useExpiry } from '@/hooks/useExpiry'
@@ -16,15 +17,18 @@ const links = [
   { href:'/contact',  label:'Contact'  },
 ]
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [visible,  setVisible]  = useState(true)
   const [mob,      setMob]      = useState(false)
   const [userMenu, setUserMenu] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const lastY = useRef(0)
   const path  = usePathname()
   const { toggleTheme, isDark } = useTheme()
-  const { hasAccess, user, logout } = useAccess()
+  const { hasAccess, user, logout, token } = useAccess()
   const { label: expiryLabel, urgency } = useExpiry(user?.expiresAt)
   const router = useRouter()
 
@@ -40,6 +44,45 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => { setMob(false); setUserMenu(false) }, [path])
+
+  useEffect(() => {
+    if (!hasAccess) {
+      setUnreadCount(0)
+      return
+    }
+
+    let cancelled = false
+
+    const loadUnreadCount = async () => {
+      const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('scsi_access_token') : '') || ''
+      if (!authToken) {
+        if (!cancelled) setUnreadCount(0)
+        return
+      }
+
+      try {
+        const { data } = await axios.get(`${API}/api/notifications/unread-count`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+        if (!cancelled && data.success) {
+          setUnreadCount(Number(data.unread) || 0)
+        }
+      } catch {
+        if (!cancelled) setUnreadCount(0)
+      }
+    }
+
+    loadUnreadCount()
+    const interval = window.setInterval(loadUnreadCount, 30000)
+    const onFocus = () => { void loadUnreadCount() }
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [hasAccess, path, token])
 
   // Close user menu on outside click
   useEffect(() => {
@@ -81,10 +124,15 @@ export default function Navbar() {
               {hasAccess ? (
                 <div className="user-menu-wrap" style={{ position:'relative' }}>
                   <button onClick={() => setUserMenu(!userMenu)} className="btn btn-ghost btn-sm"
-                    style={{ display:'flex', alignItems:'center', gap:'0.375rem' }}>
+                    style={{ display:'flex', alignItems:'center', gap:'0.375rem', position:'relative' }}>
                     {user?.avatarUrl
                       ? <img src={user.avatarUrl} alt="avatar" style={{ width:'22px', height:'22px', borderRadius:'50%', objectFit:'cover', flexShrink:0 }}/>
                       : <div style={{ width:'22px', height:'22px', borderRadius:'50%', background:'var(--gold-dim)', border:'1px solid rgba(201,162,75,0.3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:'0.65rem' }}>👤</div>}
+                    {unreadCount > 0 && (
+                      <span style={{ position:'absolute', top:'-0.25rem', left:'0.9rem', minWidth:'16px', height:'16px', padding:'0 0.25rem', borderRadius:'999px', background:'#d64545', color:'white', fontSize:'0.62rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                     <span className="show-md" style={{ maxWidth:'80px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontSize:'0.8rem' }}>
                       {user?.fullName?.split(' ')[0] ?? 'Account'}
                     </span>
@@ -106,7 +154,11 @@ export default function Navbar() {
                       {[
                         { icon:<User size={14}/>, label:'My Profile', href:'/settings' },
                         { icon:<Settings size={14}/>, label:'Settings', href:'/settings?tab=appearance' },
-                        { icon:<Bell size={14}/>, label:'Notifications', href:'/notifications' },
+                        {
+                          icon:<Bell size={14}/>,
+                          label: unreadCount > 0 ? `Notifications (${unreadCount > 99 ? '99+' : unreadCount})` : 'Notifications',
+                          href:'/notifications',
+                        },
                       ].map(item => (
                         <Link key={item.href} href={item.href}
                           style={{ display:'flex', alignItems:'center', gap:'0.625rem', padding:'0.625rem 0.75rem', borderRadius:'var(--radius-sm)', color:'var(--txt-2)', fontSize:'0.85rem', textDecoration:'none', transition:'all 0.15s' }}

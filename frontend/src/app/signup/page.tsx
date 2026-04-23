@@ -5,6 +5,7 @@ import { Eye, EyeOff, ArrowRight, Crown, CheckCircle, RefreshCw, Users, Zap, Bra
 import axios from 'axios'
 import { useAccess } from '@/hooks/useAccess'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { loadPaystack } from '@/utils/paystack'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -92,15 +93,18 @@ export default function SignupPage() {
         fullName: form.fullName, email: form.email, password: form.password, plan: selected.id
       })
       if (!data.success) { setMsg(data.message); setMsgOk(false); setBusy(false); return }
+      if (!data.paystackKey) { setMsg('Paystack public key is missing on the server.'); setMsgOk(false); setBusy(false); return }
 
-      const handler = window.PaystackPop.setup({
-        key:      data.paystackKey,
-        email:    data.email,
-        amount:   data.amountKobo,
-        ref:      data.reference,
-        currency: 'NGN',
-        onClose:  () => { setMsg('Payment closed. Click Pay to complete your subscription.'); setMsgOk(false); setBusy(false) },
-        callback: async (res) => {
+      const paystack = await loadPaystack()
+      if (!paystack || typeof paystack.setup !== 'function') {
+        setMsg('Payment system not ready. Please refresh the page.')
+        setMsgOk(false)
+        setBusy(false)
+        return
+      }
+
+      const handlePaymentCallback = (res: { reference: string }) => {
+        void (async () => {
           setMsg('Verifying payment…'); setMsgOk(true)
           try {
             const v = await axios.post(`${API}/api/paywall/verify`, { reference: res.reference })
@@ -108,17 +112,32 @@ export default function SignupPage() {
               setMsg(`Welcome to SCSI Academy! ${selected.durationLabel} of access unlocked.`)
               setMsgOk(true)
               setShowWhatsApp(true)
-              if (typeof setAccessFromPayment === 'function') setAccessFromPayment(v.data.token, v.data.accessUntill)
+              if (typeof setAccessFromPayment === 'function') setAccessFromPayment(v.data.token)
               setTimeout(() => router.push('/content'), 4500)
             } else { setMsg('Verification failed. Contact support.'); setMsgOk(false) }
           } catch { setMsg('Verification error. Contact support.'); setMsgOk(false) }
           setBusy(false)
-        },
+        })()
+      }
+
+      const handler = paystack.setup({
+        key:      data.paystackKey,
+        email:    data.email,
+        amount:   data.amountKobo,
+        ref:      data.reference,
+        currency: 'NGN',
+        onClose:  () => { setMsg('Payment closed. Click Pay to complete your subscription.'); setMsgOk(false); setBusy(false) },
+        callback: handlePaymentCallback,
       })
       handler.openIframe()
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } }; message?: string }
-      setMsg(err.response?.data?.message || 'Something went wrong.'); setMsgOk(false); setBusy(false)
+      const err = e as { response?: { data?: { message?: string } }; message?: string; code?: string }
+      const fallback = err.message === 'Network Error'
+        ? `Cannot reach the server at ${API}. Check NEXT_PUBLIC_API_URL or backend availability.`
+        : err.message
+      setMsg(err.response?.data?.message || fallback || 'Something went wrong.')
+      setMsgOk(false)
+      setBusy(false)
     }
   }
 

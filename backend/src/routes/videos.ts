@@ -195,7 +195,8 @@ router.get('/recent', async (req: Request, res: Response) => {
 
 // ─── GET /api/videos/:id/recommendations ─────────────────────────────
 router.get('/:id/recommendations', async (req: Request, res: Response) => {
-  const videoId = parseInt(req.params.id)
+  const videoIdParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+  const videoId = parseInt(videoIdParam)
   const userId  = tryGetUserId(req)
   const limit   = Math.min(6, parseInt(req.query.limit as string) || 4)
   try {
@@ -256,7 +257,8 @@ router.get('/:id/recommendations', async (req: Request, res: Response) => {
 // ─── POST /api/videos/:id/intent ─────────────────────────────────────
 // Record that a user viewed a video's paywall (for follow-up notifications)
 router.post('/:id/intent', requireStudent, async (req: AuthRequest, res: Response) => {
-  const videoId = parseInt(req.params.id)
+  const videoIdParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+  const videoId = parseInt(videoIdParam)
   const userId  = req.userId!
   try {
     await query(
@@ -273,7 +275,8 @@ const PREMIUM_PLANS = ['1on1_3months', '1on1_6months']
 
 // ─── GET /api/videos/:id/access ──────────────────────────────────────
 router.get('/:id/access', requireAuth, async (req: AuthRequest, res: Response) => {
-  const videoId = parseInt(req.params.id)
+  const videoIdParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+  const videoId = parseInt(videoIdParam)
   const userId  = req.userId
 
   if (!userId) {

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { X, Wallet, RefreshCw, CheckCircle, Sparkles } from 'lucide-react'
 import axios from 'axios'
+import { loadPaystack } from '@/utils/paystack'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -41,18 +42,10 @@ export default function FundWalletModal({ userEmail, token, suggestedAmountKobo,
   const kobo  = () => Math.round(parseFloat(amount || '0') * 100)
   const isMin = kobo() >= 10000
 
-  const fund = async () => {
+  const fund = async (): Promise<void> => {
     const k = kobo()
     if (k < 10000) { setStatus('error'); setMessage('Minimum is ₦100'); return }
     setBusy(true); setStatus('idle')
-
-    // Guard: check PaystackPop is loaded
-    if (typeof window.PaystackPop === 'undefined' || typeof window.PaystackPop?.setup !== 'function') {
-      setStatus('error')
-      setMessage('Paystack is still loading. Please wait a moment and try again.')
-      setBusy(false)
-      return
-    }
 
     try {
       const { data } = await axios.post(
@@ -61,15 +54,15 @@ export default function FundWalletModal({ userEmail, token, suggestedAmountKobo,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       if (!data.success) throw new Error(data.message)
+      if (!data.paystackKey) throw new Error('Paystack public key is missing on the server')
 
-      const handler = window.PaystackPop.setup({
-        key:      data.paystackKey,
-        email:    data.email || userEmail,
-        amount:   data.amountKobo,
-        ref:      data.reference,
-        currency: 'NGN',
-        onClose:  () => { setStatus('error'); setMessage('Payment was not completed.'); setBusy(false) },
-        callback: async (res) => {
+      const paystack = await loadPaystack()
+      if (!paystack || typeof paystack.setup !== 'function') {
+        throw new Error('Payment system unavailable. Please refresh the page and try again.')
+      }
+
+      const handlePaymentCallback = (res: { reference: string }) => {
+        void (async () => {
           setStatus('success'); setMessage('Verifying…')
           try {
             const verify = await axios.post(
@@ -88,7 +81,17 @@ export default function FundWalletModal({ userEmail, token, suggestedAmountKobo,
             setStatus('error'); setMessage('Verification failed. Contact support.')
           }
           setBusy(false)
-        },
+        })()
+      }
+
+      const handler = paystack.setup({
+        key:      data.paystackKey,
+        email:    data.email || userEmail,
+        amount:   data.amountKobo,
+        ref:      data.reference,
+        currency: 'NGN',
+        onClose:  () => { setStatus('error'); setMessage('Payment was not completed.'); setBusy(false) },
+        callback: handlePaymentCallback,
       })
       handler.openIframe()
     } catch (e: unknown) {

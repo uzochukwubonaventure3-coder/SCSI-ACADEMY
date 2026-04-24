@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Eye, EyeOff, ArrowRight, Crown, CheckCircle, RefreshCw, Users, Zap, Brain, Check } from 'lucide-react'
 import axios from 'axios'
@@ -11,7 +11,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 declare global {
   interface Window {
-    PaystackPop: { setup:(c:{key:string;email:string;amount:number;ref:string;currency:string;onClose:()=>void;callback:(r:{reference:string})=>void})=>{openIframe:()=>void} }
+    PaystackPop?: { setup:(c:{key:string;email:string;amount:number;ref:string;currency:string;onClose:()=>void;callback:(r:{reference:string})=>void})=>{openIframe:()=>void} }
   }
 }
 
@@ -40,7 +40,7 @@ const PLAN_FEATURES: Record<string,string[]> = {
   '1on1_6months': ['All 3-Month benefits', 'Total identity transformation', '2-year & 5-year life roadmap', 'Elite VIP access', '✅ ALL video categories included FREE'],
 }
 
-export default function SignupPage() {
+function SignupPageContent() {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const planFromUrl  = searchParams?.get('plan')
@@ -112,7 +112,7 @@ export default function SignupPage() {
               setMsg(`Welcome to SCSI Academy! ${selected.durationLabel} of access unlocked.`)
               setMsgOk(true)
               setShowWhatsApp(true)
-              if (typeof setAccessFromPayment === 'function') setAccessFromPayment(v.data.token)
+              if (typeof setAccessFromPayment === 'function' && v.data.user) setAccessFromPayment(v.data.token, v.data.user)
               setTimeout(() => router.push('/content'), 4500)
             } else { setMsg('Verification failed. Contact support.'); setMsgOk(false) }
           } catch { setMsg('Verification error. Contact support.'); setMsgOk(false) }
@@ -312,5 +312,13 @@ export default function SignupPage() {
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-0)' }} />}>
+      <SignupPageContent />
+    </Suspense>
   )
 }

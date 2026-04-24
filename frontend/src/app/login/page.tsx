@@ -1,11 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, ArrowRight, GraduationCap, Shield } from 'lucide-react'
 import { useAccess } from '@/hooks/useAccess'
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router  = useRouter()
   const params  = useSearchParams()
   const next    = params.get('next') || '/content'
@@ -189,5 +189,17 @@ export default function LoginPage() {
       </div>
       <style>{'@keyframes spin{to{transform:rotate(360deg)}}@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}'}</style>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-0)' }}>
+        <div style={{ width:'32px', height:'32px', border:'2px solid var(--bg-3)', borderTop:'2px solid var(--gold)', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   )
 }

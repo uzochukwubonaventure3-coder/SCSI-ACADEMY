@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle, XCircle, Loader } from 'lucide-react'
 import Link from 'next/link'
@@ -7,7 +7,7 @@ import axios from 'axios'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageContent() {
   const params = useSearchParams()
   const router = useRouter()
   const token  = params.get('token')
@@ -64,5 +64,13 @@ export default function VerifyEmailPage() {
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-0)' }} />}>
+      <VerifyEmailPageContent />
+    </Suspense>
   )
 }

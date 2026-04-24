@@ -25,7 +25,7 @@ export function useProgress() {
     if (!token) return
     try {
       await axios.post(`${API}/api/progress/mark`, { contentType, contentId }, { headers: { Authorization: `Bearer ${token}` } })
-      setProgress(p => ({ ...p, [contentType]: [...new Set([...p[contentType], contentId])] }))
+      setProgress(p => ({ ...p, [contentType]: Array.from(new Set([...p[contentType], contentId])) }))
     } catch {}
   }, [])
 

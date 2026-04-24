@@ -57,18 +57,6 @@ npm run install:all
 cd backend
 cp .env.example .env
 ```
-
-Edit `.env`:
-```env
-PORT=5000
-NODE_ENV=development
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/scsi_academy
-FRONTEND_URL=http://localhost:3001
-EMAIL_USER=preciouseze156@gmail.com
-EMAIL_PASS=your_gmail_app_password
-JWT_SECRET=your_random_32_char_secret_here
-ADMIN_EMAIL=preciouseze156@gmail.com
-ADMIN_PASSWORD_HASH=   # Generated in step 3
 ```
 
 ### 3. Generate admin password hash
@@ -93,8 +81,6 @@ npm run db:migrate
 
 ```bash
 cd frontend
-cp .env.example .env.local
-# .env.local is already set to http://localhost:5000 for development
 ```
 
 ### 6. Start both servers
@@ -173,7 +159,7 @@ DELETE /api/admin/gallery/:id       # Remove image
 
 ## Deployment
 
-### Backend → Railway
+### Backend 
 
 1. Go to [railway.app](https://railway.app) → New Project
 2. **Add PostgreSQL** plugin — Railway auto-sets `DATABASE_URL`

@@ -218,7 +218,24 @@ router.post('/verify', async (req:Request, res:Response) => {
       const u = await query(`SELECT cu.* FROM content_users cu JOIN payments p ON p.user_id=cu.id WHERE p.reference=$1`, [reference])
       if (u.rows.length) {
         const token = issueAccessToken(u.rows[0])
-        return res.json({ success:true, alreadyVerified:true, token, daysGranted:getPlans()[u.rows[0].plan as PlanId]?.durationDays })
+        const user = u.rows[0]
+        return res.json({
+          success: true,
+          alreadyVerified: true,
+          token,
+          daysGranted: getPlans()[user.plan as PlanId]?.durationDays,
+          user: {
+            id: user.id,
+            email: user.email,
+            fullName: user.full_name,
+            plan: user.plan,
+            expiresAt: user.expires_at,
+            avatarUrl: user.avatar_url,
+            phone: user.phone,
+            bio: user.bio,
+            role: 'student',
+          },
+        })
       }
     }
     // Verify with Paystack
@@ -253,7 +270,24 @@ router.post('/verify', async (req:Request, res:Response) => {
     const user = await query(`SELECT * FROM content_users WHERE id=$1`, [user_id])
     const token = issueAccessToken(user.rows[0])
     sendWelcomeEmail(user.rows[0].email, user.rows[0].full_name, selectedPlan.label, user.rows[0].expires_at).catch(console.error)
-    res.json({ success:true, token, daysGranted:selectedPlan.durationDays, planLabel:selectedPlan.label, includesAllVideos:selectedPlan.includesAllVideos })
+    res.json({
+      success: true,
+      token,
+      daysGranted: selectedPlan.durationDays,
+      planLabel: selectedPlan.label,
+      includesAllVideos: selectedPlan.includesAllVideos,
+      user: {
+        id: user.rows[0].id,
+        email: user.rows[0].email,
+        fullName: user.rows[0].full_name,
+        plan: user.rows[0].plan,
+        expiresAt: user.rows[0].expires_at,
+        avatarUrl: user.rows[0].avatar_url,
+        phone: user.rows[0].phone,
+        bio: user.rows[0].bio,
+        role: 'student',
+      },
+    })
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('[Verify]', err)

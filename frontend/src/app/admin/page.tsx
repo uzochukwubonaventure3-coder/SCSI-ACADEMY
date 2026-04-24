@@ -6,7 +6,7 @@ import {
   LogOut, Plus, Trash2, Edit3, Check, X, ChevronDown, ChevronRight,
   Send, BookOpen, UserCheck, Eye, Activity, Search, ImageIcon, Tag, Menu, Crown, HelpCircle,
   Wallet, TrendingUp, BarChart2, Lock, Palette, Camera, EyeOff, Sun, Moon, Download, Phone,
-  Shield, CreditCard, Bell, RefreshCw, Upload, Link as LinkIcon
+  Shield, CreditCard, Bell, RefreshCw, Upload, Link as LinkIcon, ArrowLeft
 } from 'lucide-react'
 import RichEditor from '@/components/ui/RichEditor'
 import { useTheme } from '@/hooks/useTheme' 
@@ -457,36 +457,6 @@ function VideoManager({token,toast}:{token:string;toast:ReturnType<typeof useToa
                   <input type="number" value={form.previewEndSeconds||60} min={15} max={300} className="fi" onChange={e=>setForm(p=>({...p,previewEndSeconds:parseInt(e.target.value)||60}))}/>
                   <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>How many seconds to show (15–300s). Default: 60s.</p>
                 </div>
-              </div>
-            </div>
-          )}
-          {/* Conversion fields */}
-          {!form.isFree&&(
-            <div style={{padding:'1rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',display:'flex',flexDirection:'column',gap:'0.875rem'}}>
-              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Conversion & Value</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-                <div className="fgroup">
-                  <label className="fl">Discount % (optional)</label>
-                  <input type="number" value={(form as {discountPercent?:number}).discountPercent||''} min={0} max={100} className="fi" placeholder="e.g. 20" onChange={e=>setForm(p=>({...p,discountPercent:parseInt(e.target.value)||0}))}/>
-                </div>
-                <div className="fgroup">
-                  <label className="fl">Discount expires (optional)</label>
-                  <input type="datetime-local" value={(form as {discountExpiresAt?:string}).discountExpiresAt||''} className="fi" onChange={e=>setForm(p=>({...p,discountExpiresAt:e.target.value}))}/>
-                </div>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Target Audience</label>
-                <input value={(form as {targetAudience?:string}).targetAudience||''} className="fi" placeholder="e.g. Students preparing for NYSC, Aspiring leaders" onChange={e=>setForm(p=>({...p,targetAudience:e.target.value}))}/>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Outcomes (one per line)</label>
-                <textarea value={(form as {outcomes?:string}).outcomes||''} className="fi" rows={3} placeholder="Speak confidently in any room&#10;Structure a 5-minute speech&#10;Overcome stage fright" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,outcomes:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown in the paywall "What you'll gain" section.</p>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Lesson List (one per line)</label>
-                <textarea value={(form as {lessons?:string}).lessons||''} className="fi" rows={4} placeholder="Lesson 1: Overcoming Fear&#10;Lesson 2: The Perfect Hook&#10;Lesson 3: Body Language Mastery" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,lessons:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown locked in the paywall to create urgency.</p>
               </div>
             </div>
           )}
@@ -1112,36 +1082,6 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
               Preview: Students enter <strong style={{color:'var(--gold)',letterSpacing:'0.08em'}}>{form.code||'CODE'}</strong> → get <strong style={{color:'var(--gold)'}}>{form.discount_percent}% off</strong>{form.usage_limit?` · max ${form.usage_limit} uses`:' · unlimited uses'}{form.expires_at?` · expires ${new Date(form.expires_at).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})}`:' · no expiry'}
             </div>
           )}
-          {/* Conversion fields */}
-          {!form.isFree&&(
-            <div style={{padding:'1rem',background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',display:'flex',flexDirection:'column',gap:'0.875rem'}}>
-              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--txt-1)',marginBottom:'-0.25rem'}}>Conversion & Value</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-                <div className="fgroup">
-                  <label className="fl">Discount % (optional)</label>
-                  <input type="number" value={(form as {discountPercent?:number}).discountPercent||''} min={0} max={100} className="fi" placeholder="e.g. 20" onChange={e=>setForm(p=>({...p,discountPercent:parseInt(e.target.value)||0}))}/>
-                </div>
-                <div className="fgroup">
-                  <label className="fl">Discount expires (optional)</label>
-                  <input type="datetime-local" value={(form as {discountExpiresAt?:string}).discountExpiresAt||''} className="fi" onChange={e=>setForm(p=>({...p,discountExpiresAt:e.target.value}))}/>
-                </div>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Target Audience</label>
-                <input value={(form as {targetAudience?:string}).targetAudience||''} className="fi" placeholder="e.g. Students preparing for NYSC, Aspiring leaders" onChange={e=>setForm(p=>({...p,targetAudience:e.target.value}))}/>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Outcomes (one per line)</label>
-                <textarea value={(form as {outcomes?:string}).outcomes||''} className="fi" rows={3} placeholder="Speak confidently in any room&#10;Structure a 5-minute speech&#10;Overcome stage fright" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,outcomes:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown in the paywall "What you'll gain" section.</p>
-              </div>
-              <div className="fgroup">
-                <label className="fl">Lesson List (one per line)</label>
-                <textarea value={(form as {lessons?:string}).lessons||''} className="fi" rows={4} placeholder="Lesson 1: Overcoming Fear&#10;Lesson 2: The Perfect Hook&#10;Lesson 3: Body Language Mastery" style={{resize:'vertical'}} onChange={e=>setForm(p=>({...p,lessons:e.target.value}))}/>
-                <p style={{fontSize:'0.68rem',color:'var(--txt-3)',marginTop:'0.25rem'}}>Shown locked in the paywall to create urgency.</p>
-              </div>
-            </div>
-          )}
           <div style={{display:'flex',gap:'0.625rem'}}>
             <button onClick={save} disabled={saving} className="btn btn-gold" style={{opacity:saving?.7:1}}>
               {saving?<><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/>Saving…</>:<><Tag size={13}/>Create Coupon</>}
@@ -1159,7 +1099,7 @@ function CouponsManager({token,toast}:{token:string;toast:ReturnType<typeof useT
           const status  = !cp.is_active?'inactive':expired?'expired':maxed?'maxed':'active'
           const statusColor = status==='active'?'#50c880':status==='inactive'?'var(--txt-3)':'#e07070'
           return (
-            <div key={cp.id} style={{display:'flex',alignItems:'center',gap:'0.875rem',padding:'0.875rem 1rem',background:'var(--bg-1)',border:`1px solid ${status==='active'?'rgba(201,162,75,0.15)':'var(--border)'}`,borderRadius:'var(--radius-md)',flexWrap:'wrap',gap:'0.75rem'}}>
+            <div key={cp.id} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.875rem 1rem',background:'var(--bg-1)',border:`1px solid ${status==='active'?'rgba(201,162,75,0.15)':'var(--border)'}`,borderRadius:'var(--radius-md)',flexWrap:'wrap'}}>
               {/* Code + discount */}
               <div style={{display:'flex',alignItems:'center',gap:'0.75rem',flex:'0 0 auto'}}>
                 <div style={{padding:'0.375rem 0.75rem',background:'rgba(201,162,75,0.08)',border:'1px solid rgba(201,162,75,0.2)',borderRadius:'6px'}}>

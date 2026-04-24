@@ -11,7 +11,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 declare global {
   interface Window {
-    PaystackPop: {
+    PaystackPop?: {
       setup: (cfg: {
         key: string; email: string; amount: number; ref: string; currency: string
         onClose: () => void; callback: (r: { reference: string }) => void

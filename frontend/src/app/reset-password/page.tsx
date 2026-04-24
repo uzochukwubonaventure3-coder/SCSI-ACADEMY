@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react'
@@ -7,7 +7,7 @@ import axios from 'axios'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
   const params = useSearchParams()
   const router = useRouter()
   const token  = params.get('token') || ''
@@ -113,5 +113,13 @@ export default function ResetPasswordPage() {
       </div>
       <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-0)' }} />}>
+      <ResetPasswordPageContent />
+    </Suspense>
   )
 }

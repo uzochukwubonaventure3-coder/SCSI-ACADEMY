@@ -24,7 +24,7 @@ interface Plan {
 
 declare global {
   interface Window {
-    PaystackPop: {
+    PaystackPop?: {
       setup: (cfg: {
         key: string; email: string; amount: number; ref: string; currency: string
         onClose: () => void
@@ -244,7 +244,7 @@ export default function PaywallGate({ children }: { children: React.ReactNode })
       </div>
 
       {/* Gradient fade + lock card */}
-      <div style={{ position: 'absolute', inset: 0, paddingTop: '80px', background: 'linear-gradient(to bottom, rgba(13,10,10,0.1) 0%, rgba(13,10,10,0.85) 35%, rgba(13,10,10,1) 60%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', zIndex: 10, paddingTop: '3rem' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(13,10,10,0.1) 0%, rgba(13,10,10,0.85) 35%, rgba(13,10,10,1) 60%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', zIndex: 10, paddingTop: '3rem' }}>
         <div style={{ width: '100%', maxWidth: '500px', background: 'rgba(22,14,14,0.97)', border: '1px solid rgba(212,175,55,0.28)', backdropFilter: 'blur(16px)', padding: '2.25rem' }}>
 
           {/* Card header */}

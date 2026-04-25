@@ -13,7 +13,7 @@ const plans = [
     id: 'academy',
     name: 'SCSI Mentorship Academy',
     price: 15000,
-    duration: '1 Month',
+    duration: '2 Months',
     tag: null,
     savingsBadge: null,
     target: 'Those looking for community, structure, and foundational growth.',

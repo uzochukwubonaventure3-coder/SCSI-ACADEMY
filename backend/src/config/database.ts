@@ -13,6 +13,7 @@ export const pool = new Pool({
   connectionTimeoutMillis: 5000,
 })
 
+
 export async function testConnection(): Promise<void> {
   try {
     const client = await pool.connect()
@@ -39,3 +40,4 @@ export async function query(text: string, params?: unknown[]) {
     throw err
   }
 }
+console.log("DATABASE_URL =", process.env.DATABASE_URL)

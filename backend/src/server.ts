@@ -44,7 +44,8 @@ app.use(helmet({
 // ─── CORS ─────────────────────────────────────────────────────────────
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
-  'scsiacademy.info',
+  'https://scsiacademy.info',
+  'https://www.scsiacademy.info',
   'http://localhost:3001',
 ]
 app.use(cors({

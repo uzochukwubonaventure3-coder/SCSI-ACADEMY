@@ -20,10 +20,7 @@ export const refinerySchema = z.object({
   (val) => typeof val === 'string' ? val.trim() : val,
   z.enum(['Morning Cohort', 'Evening Cohort'])
 ),
-  email: z.preprocess(
-  (val) => val === '' ? undefined : val,
-  z.string().email().optional()
- ),
+  email: z.string().email(),
 
 })
 

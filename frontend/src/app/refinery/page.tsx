@@ -266,6 +266,7 @@ export default function RefineryPage() {
                 value={form.email}
                 onChange={handle}
                 placeholder="your@email.com"
+                required
                 style={inputStyle}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(212,175,55,0.6)')}
                 onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}

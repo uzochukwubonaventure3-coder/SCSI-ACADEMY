@@ -243,11 +243,14 @@ export default function RefineryPage() {
               </div>
               <div>
                 <label style={labelStyle}>Preferred Session Time</label>
-                <select name="preferredSession" value={form.preferredSession} onChange={handle} style={{ ...inputStyle, cursor: 'pointer' }}
-                  onFocus={(e) => (e.target.style.borderColor = 'rgba(212,175,55,0.6)')}
-                  onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}>
-                  <option>Morning Cohort</option>
-                  <option>Evening Cohort</option>
+                <select
+                  name="preferredSession"
+                  value={form.preferredSession}
+                  onChange={handle}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                >
+                  <option value="Morning Cohort">Morning Cohort</option>
+                  <option value="Evening Cohort">Evening Cohort</option>
                 </select>
               </div>
             </div>

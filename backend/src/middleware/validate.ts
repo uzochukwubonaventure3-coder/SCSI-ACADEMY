@@ -16,7 +16,10 @@ export const refinerySchema = z.object({
   primaryGoal:        z.string().min(10).max(1000),
   biggestHurdle:      z.string().min(10).max(1000),
   whatsappNumber:     z.string().min(7).max(30),
-  preferredSession:   z.enum(['Morning Cohort', 'Evening Cohort']),
+  preferredSession: z.preprocess(
+  (val) => typeof val === 'string' ? val.trim() : val,
+  z.enum(['Morning Cohort', 'Evening Cohort'])
+),
   email:              z.string().email().optional().or(z.literal('')),
 })
 

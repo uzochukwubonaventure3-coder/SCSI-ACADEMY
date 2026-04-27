@@ -31,14 +31,18 @@ export const newsletterSchema = z.object({
 export function validate(schema: z.ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body)
+
     if (!result.success) {
-      const errors = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`)
+      console.log("❌ VALIDATION FAILED BODY:", req.body)
+      console.log("❌ ERRORS:", result.error.errors)
+
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
-        errors,
+        errors: result.error.errors,
       })
     }
+
     req.body = result.data
     next()
   }

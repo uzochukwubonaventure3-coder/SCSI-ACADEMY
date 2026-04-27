@@ -31,6 +31,7 @@ export interface RefineryFormData {
   biggestHurdle: string
   whatsappNumber: string
   preferredSession: SessionTime
+  email: string
 }
 
 // ─── Newsletter ───────────────────────────────────────────────────────

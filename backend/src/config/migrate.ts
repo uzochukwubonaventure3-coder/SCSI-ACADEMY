@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS refinery_registrations (
   biggest_hurdle      TEXT NOT NULL,
   whatsapp_number     VARCHAR(30) NOT NULL,
   preferred_session   VARCHAR(30) NOT NULL DEFAULT 'Morning Cohort',
+  email               VARCHAR(255),
   status              VARCHAR(30) DEFAULT 'pending',
   created_at          TIMESTAMPTZ DEFAULT NOW()
 );

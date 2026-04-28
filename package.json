@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend":  "cd backend  && npm run dev",
-    "install:all":  "cd frontend && npm install && cd ../backend && npm install",
+    "dev:backend": "cd backend  && npm run dev",
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
     "build:frontend": "cd frontend && npm run build",
-    "build:backend":  "cd backend  && npm run build",
-    "db:migrate":     "cd backend  && npm run db:migrate",
+    "build:backend": "cd backend  && npm run build",
+    "db:migrate": "cd backend  && npm run db:migrate",
     "db:add-email-refinery": "cd backend  && npm run db:add-email-refinery",
-    "hash-password":  "cd backend  && npx tsx src/utils/hashPassword.ts"
+    "hash-password": "cd backend  && npx tsx src/utils/hashPassword.ts"
+  },
+  "dependencies": {
+    "resend": "^6.12.2"
   }
 }

@@ -1,16 +1,8 @@
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 import dotenv from 'dotenv'
 dotenv.config()
 
-function getTransporter() {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null
-  return nodemailer.createTransport({
-    host:   process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port:   Number(process.env.EMAIL_PORT) || 587,
-    secure: false,
-    auth:   { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  })
-}
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 const brandColors = { bg: '#0D0507', card: '#1A0C0D', gold: '#C9A24B', text: '#F0E6D0', muted: '#9A7860' }
 
@@ -32,10 +24,14 @@ function baseTemplate(title: string, body: string): string {
 
 // Send email with silent fail + log
 async function send(to: string, subject: string, html: string) {
-  const t = getTransporter()
-  if (!t) { console.log(`[EMAIL SKIP] No credentials. Subject: ${subject}`); return }
+  if (!resend) { console.log(`[EMAIL SKIP] No RESEND_API_KEY. Subject: ${subject}`); return }
   try {
-    await t.sendMail({ from: process.env.EMAIL_FROM || 'SCSI Academy <noreply@scsi.ng>', to, subject, html })
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'SCSI Academy <onboarding@resend.dev>',
+      to,
+      subject,
+      html,
+    })
     console.log(`[EMAIL SENT] ${subject} → ${to}`)
   } catch (err) {
     console.error(`[EMAIL FAILED] ${subject} → ${to}:`, err)
@@ -128,9 +124,8 @@ export async function sendPasswordResetEmail(to: string, fullName: string, token
 
 // ── Broadcast email (admin → many) ──────────────────────────────────
 export async function sendBroadcastEmail(to: string[], subject: string, bodyHtml: string) {
+  if (!resend) { console.log(`[EMAIL SKIP] No RESEND_API_KEY. Broadcast to ${to.length} users`); return }
   if (!to.length) return
-  const t = getTransporter()
-  if (!t) { console.log(`[EMAIL SKIP] No credentials. Broadcast to ${to.length} users`); return }
 
   const html = baseTemplate(subject, `
     <div style="color:${brandColors.muted};line-height:1.85;font-size:0.9375rem;">${bodyHtml}</div>
@@ -144,9 +139,9 @@ export async function sendBroadcastEmail(to: string[], subject: string, bodyHtml
   for (let i = 0; i < to.length; i += batchSize) {
     const batch = to.slice(i, i + batchSize)
     try {
-      await t.sendMail({
-        from: process.env.EMAIL_FROM || 'SCSI Academy <noreply@scsi.ng>',
-        bcc:  batch.join(','),
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'SCSI Academy <onboarding@resend.dev>',
+        bcc: batch,
         subject,
         html,
       })

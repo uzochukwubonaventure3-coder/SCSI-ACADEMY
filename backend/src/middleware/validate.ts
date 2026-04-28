@@ -13,8 +13,8 @@ export const contactSchema = z.object({
 export const refinerySchema = z.object({
   fullName:           z.string().min(2).max(150),
   levelOrProfession:  z.string().min(2).max(120),
-  primaryGoal:        z.string().min(10).max(1000),
-  biggestHurdle:      z.string().min(10).max(1000),
+  primaryGoal:        z.string().min(5).max(1000),
+  biggestHurdle:      z.string().min(5).max(1000),
   whatsappNumber:     z.string().min(7).max(30),
   preferredSession: z.preprocess(
   (val) => typeof val === 'string' ? val.trim() : val,

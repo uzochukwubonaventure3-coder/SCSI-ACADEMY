@@ -12,7 +12,7 @@ const plans = [
   {
     id: 'academy',
     name: 'SCSI Mentorship Academy',
-    price: 150000,
+    price: 15000,
     duration: '2 Months',
     tag: null,
     savingsBadge: null,
@@ -30,7 +30,7 @@ const plans = [
   {
     id: '1on1-monthly',
     name: 'One-on-One Mentorship',
-    price: 150000,
+    price: 15000,
     duration: '1 Month',
     tag: 'Deep Dive',
     savingsBadge: null,
@@ -48,7 +48,7 @@ const plans = [
   {
     id: '1on1-3months',
     name: 'One-on-One Coaching',
-    price: 400000,
+    price: 40000,
     duration: '3 Months',
     tag: 'Consistency',
     savingsBadge: 'Save ₦5,000',
@@ -66,7 +66,7 @@ const plans = [
   {
     id: '1on1-6months',
     name: 'One-on-One Coaching',
-    price: 600000,
+    price: 60000,
     duration: '6 Months',
     tag: 'Legacy Builder',
     savingsBadge: 'BEST VALUE — Save 33%',

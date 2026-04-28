@@ -24,14 +24,20 @@ function baseTemplate(title: string, body: string): string {
 
 // Send email with silent fail + log
 async function send(to: string, subject: string, html: string) {
-  if (!resend) { console.log(`[EMAIL SKIP] No RESEND_API_KEY. Subject: ${subject}`); return }
+  if (!resend) { 
+    console.log(`[EMAIL SKIP] No RESEND_API_KEY. Subject: ${subject}`); 
+    return 
+  }
+
   try {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || 'SCSI Academy <onboarding@resend.dev>',
       to,
       subject,
       html,
+      text: html.replace(/<[^>]+>/g, '') // ✅ auto-generate plain text
     })
+
     console.log(`[EMAIL SENT] ${subject} → ${to}`)
   } catch (err) {
     console.error(`[EMAIL FAILED] ${subject} → ${to}:`, err)

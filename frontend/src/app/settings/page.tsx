@@ -169,6 +169,7 @@ export default function SettingsPage() {
   const [section, setSection] = useState<Section | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const [saving, setSaving] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Profile form
@@ -213,23 +214,37 @@ export default function SettingsPage() {
   }, [token])
   const authH = useCallback(() => ({ Authorization: `Bearer ${getT()}` }), [getT])
 
-  const handleAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     if (file.size > 3 * 1024 * 1024) { err('Image must be under 3MB'); return }
-    const reader = new FileReader()
-    reader.onload = async ev => {
-      const url = ev.target?.result as string
+    setAvatarUploading(true)
+    try {
+      const { data: sig } = await axios.get(`${API}/api/upload/cloudinary-signature`, {
+        headers: authH(),
+      })
+      if (!sig.success) throw new Error(sig.message || 'Failed to prepare upload')
+
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('api_key', sig.apiKey)
+      fd.append('timestamp', String(sig.timestamp))
+      fd.append('signature', sig.signature)
+      fd.append('folder', sig.folder)
+
+      const { data: cloud } = await axios.post(sig.uploadUrl, fd)
+      const url = cloud.secure_url as string
       setAvatar(url)
       if (typeof window !== 'undefined') localStorage.setItem('scsi_avatar', url)
       updateLocalUser({ avatarUrl: url })
-      try {
-        await axios.put(`${API}/api/paywall/profile`, { fullName: name, bio, avatarUrl: url }, { headers: authH() })
-        ok('Photo updated!')
-      } catch {
-        ok('Photo saved locally')
-      }
+      await axios.put(`${API}/api/paywall/profile`, { fullName: name, bio, avatarUrl: url }, { headers: authH() })
+      ok('Photo updated!')
+    } catch (e: unknown) {
+      const er = e as { response?: { data?: { message?: string } }; message?: string }
+      err(er.response?.data?.message || er.message || 'Photo upload failed')
+    } finally {
+      setAvatarUploading(false)
+      e.target.value = ''
     }
-    reader.readAsDataURL(file)
   }
 
   const saveProfile = async () => {
@@ -294,7 +309,7 @@ export default function SettingsPage() {
                     ? <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <span style={{ fontSize: '1.75rem' }}>👤</span>}
                 </div>
-                <button onClick={() => fileRef.current?.click()} style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '22px', height: '22px', borderRadius: '50%', background: 'var(--gold)', border: '2px solid var(--bg-0)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <button onClick={() => fileRef.current?.click()} disabled={avatarUploading} style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '22px', height: '22px', borderRadius: '50%', background: 'var(--gold)', border: '2px solid var(--bg-0)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'not-allowed' : 'pointer', opacity: avatarUploading ? 0.7 : 1 }}>
                   <Camera size={10} color="#080506" />
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatar} />
@@ -381,8 +396,8 @@ export default function SettingsPage() {
                 <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(201,162,75,0.3)', background: 'var(--bg-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {avatar ? <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '2rem' }}>👤</span>}
                 </div>
-                <button onClick={() => fileRef.current?.click()} style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '26px', height: '26px', borderRadius: '50%', background: 'var(--gold)', border: '2px solid var(--bg-0)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                  <Camera size={12} color="#080506" />
+                <button onClick={() => fileRef.current?.click()} disabled={avatarUploading} style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '26px', height: '26px', borderRadius: '50%', background: 'var(--gold)', border: '2px solid var(--bg-0)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'not-allowed' : 'pointer', opacity: avatarUploading ? 0.7 : 1 }}>
+                  {avatarUploading ? <RefreshCw size={12} color="#080506" style={{ animation: 'spin 0.8s linear infinite' }} /> : <Camera size={12} color="#080506" />}
                 </button>
               </div>
             </div>

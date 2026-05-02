@@ -208,21 +208,17 @@ export async function sendBroadcastEmail(to: string[], subject: string, bodyHtml
   `
   )
 
-  const plainText = html.replace(/<[^>]+>/g, '')
-
   // Send in batches of 50 to avoid timeouts
   const batchSize = 50
   for (let i = 0; i < to.length; i += batchSize) {
     const batch = to.slice(i, i + batchSize)
     try {
-      // Use type assertion if your Resend version expects `bcc: string` only
-      // Convert array to comma-separated string if needed, or keep as is.
-      await (resend.emails.send as any)({
+      await resend.emails.send({
         from: process.env.EMAIL_FROM || 'SCSI Academy <onboarding@resend.dev>',
-        bcc: batch, // if error: change to batch.join(',') or use `to` instead
+        bcc: batch,
         subject,
         html,
-        text: plainText,
+        text: html.replace(/<[^>]+>/g, ''), // ✅ fixes TS2345 error
       })
     } catch (err) {
       console.error(`[Broadcast batch ${i}]`, err)

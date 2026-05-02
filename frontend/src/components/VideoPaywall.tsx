@@ -54,6 +54,10 @@ function buildTimedPreview(url: string, endSecs: number): string | null {
   } catch { return null }
 }
 
+function isYouTubeEmbed(url: string): boolean {
+  return /youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\//.test(url)
+}
+
 export default function VideoPaywall({
   videoId, videoTitle, priceKobo, walletBalance, userEmail, token,
   previewUrl, previewEndSeconds = 60, mainVideoUrl, thumbnailUrl,
@@ -97,6 +101,7 @@ export default function VideoPaywall({
     : mainVideoUrl
     ? buildTimedPreview(mainVideoUrl, previewEndSeconds)
     : null
+  const previewIsIframe = !!previewSrc && isYouTubeEmbed(previewSrc)
 
   // Auto-transition preview → paywall after previewEndSeconds
   useEffect(() => {
@@ -248,12 +253,22 @@ export default function VideoPaywall({
         }}>
           {/* Video */}
           <div style={{ position: 'relative', paddingBottom: '56.25%' }}>
-            <iframe
-              src={previewSrc}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-            />
+            {previewIsIframe ? (
+              <iframe
+                src={previewSrc}
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+              />
+            ) : (
+              <video
+                src={previewSrc}
+                autoPlay
+                controls
+                playsInline
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', objectFit: 'cover' }}
+              />
+            )}
             {/* PREVIEW pill */}
             <div style={{ position: 'absolute', top: '0.875rem', left: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.3rem 0.75rem', borderRadius: '99px', background: 'rgba(201,162,75,0.95)', backdropFilter: 'blur(4px)' }}>
               <Play size={10} fill="#080506" color="#080506"/>

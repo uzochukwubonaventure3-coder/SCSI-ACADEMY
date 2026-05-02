@@ -27,7 +27,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   const token = jwt.sign(
-    { email },
+    { email, role: 'admin' },
     process.env.JWT_SECRET || 'fallback_secret',
     { expiresIn: '7d' }
   )

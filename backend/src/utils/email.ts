@@ -198,6 +198,12 @@ export async function sendBroadcastEmail(to: string[], subject: string, bodyHtml
   }
   if (!to.length) return
 
+  const from = process.env.EMAIL_FROM || 'SCSI Academy <onboarding@resend.dev>'
+  const broadcastTo =
+    process.env.EMAIL_BROADCAST_TO ||
+    process.env.ADMIN_EMAIL ||
+    'onboarding@resend.dev'
+
   const html = baseTemplate(
     subject,
     `
@@ -214,7 +220,8 @@ export async function sendBroadcastEmail(to: string[], subject: string, bodyHtml
     const batch = to.slice(i, i + batchSize)
     try {
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'SCSI Academy <onboarding@resend.dev>',
+        from,
+        to: broadcastTo,
         bcc: batch,
         subject,
         html,

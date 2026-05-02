@@ -44,8 +44,23 @@ export default function HeroSection() {
               <em style={{ color:'var(--gold)', fontStyle:'normal' }}>Balanced Giant</em>.
             </p>
 
+            <div className="anim-up d2" style={{ display:'inline-flex', flexWrap:'wrap', alignItems:'center', gap:'0.5rem', padding:'0.75rem 1rem', background:'rgba(201,162,75,0.08)', border:'1px solid rgba(201,162,75,0.22)', borderRadius:'14px', marginBottom:'1.5rem', maxWidth:'620px' }}>
+              <span style={{ fontSize:'0.72rem', fontWeight:800, letterSpacing:'0.12em', textTransform:'uppercase', color:'var(--gold)' }}>
+                Premium Access
+              </span>
+              <span style={{ fontSize:'0.92rem', color:'var(--txt-2)', lineHeight:1.6 }}>
+                Visitors can explore the site, but paid access is required to unlock the full content library, premium videos, and student dashboard.
+              </span>
+            </div>
+
             {/* CTAs */}
             <div className="anim-up d3" style={{ display:'flex', flexWrap:'wrap', gap:'0.875rem', marginBottom:'3rem' }}>
+              <Link href="/signup" className="btn btn-gold" style={{ padding:'0.875rem 2rem', fontSize:'0.875rem' }}>
+                Pay & Get Access <ArrowRight size={15}/>
+              </Link>
+              <Link href="/login" className="btn btn-ghost" style={{ padding:'0.875rem 2rem', fontSize:'0.875rem' }}>
+                Member Login
+              </Link>
               <Link href="/refinery" className="btn btn-gold" style={{ padding:'0.875rem 2rem', fontSize:'0.875rem' }}>
                 Enter the Refinery <ArrowRight size={15}/>
               </Link>

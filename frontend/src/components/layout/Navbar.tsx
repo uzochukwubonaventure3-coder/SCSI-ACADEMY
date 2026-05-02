@@ -179,8 +179,8 @@ export default function Navbar() {
                 </div>
               ) : (
                 <>
-                  <Link href="/login"  className="btn btn-ghost btn-sm show-md">Login</Link>
-                  <Link href="/signup" className="btn btn-gold  btn-sm show-md">Get Access</Link>
+                  <Link href="/login"  className="btn btn-ghost btn-sm show-md">Member Login</Link>
+                  <Link href="/signup" className="btn btn-gold  btn-sm show-md">Pay & Get Access</Link>
                 </>
               )}
               <button onClick={toggleTheme} className="btn btn-icon" aria-label="Theme">
@@ -231,8 +231,8 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/login"  className="btn btn-ghost" style={{ color:'var(--txt-1)' }}>Login</Link>
-              <Link href="/signup" className="btn btn-gold">Get Access</Link>
+              <Link href="/login"  className="btn btn-ghost" style={{ color:'var(--txt-1)' }}>Member Login</Link>
+              <Link href="/signup" className="btn btn-gold">Pay & Get Access</Link>
             </>
           )}
         </div>

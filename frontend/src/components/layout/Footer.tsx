@@ -85,7 +85,7 @@ export default function Footer() {
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {[
-                { icon: <Mail size={12}/>, text: 'preciouseze156@gmail.com', href: 'mailto:preciouseze156@gmail.com' },
+                { icon: <Mail size={12}/>, text: 'Email Us', href: 'mailto:preciouseze156@gmail.com' },
                 { icon: <Phone size={12}/>, text: '+234 901 805 3015', href: 'https://wa.me/2349018053015' },
               ].map(({ icon, text, href }) => (
                 <a key={text} href={href} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--txt-3)', fontSize: '0.78rem', textDecoration: 'none', transition: 'color 0.2s' }}

@@ -9,11 +9,21 @@ interface Testimonial {
   id: number; name: string; role: string; quote: string; approved: boolean
 }
 
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+
+  const first = parts[0]?.[0]?.toUpperCase() ?? ''
+  const second = parts.length > 1 ? parts[parts.length - 1]?.[0]?.toUpperCase() ?? '' : ''
+
+  return `${first}${second}`.slice(0, 2)
+}
+
 // Static fallbacks shown while API loads
 const fallbacks: Testimonial[] = [
   { id:1, name:"God'swill", role:'Voice Coach & Mentee', quote:'SCSI didn\'t just give me advice—it gave me a map. Coach Precious identified exactly what was holding me back and built a strategy that actually worked. I went from confused to commanding.', approved:true },
-  { id:2, name:'Student Voice Challenge Graduate', role:'Public Speaking Program', quote:'The Public Speaking Mastery program was unlike anything I experienced in school. I learned the architecture of a message and now I can walk into any room and own it.', approved:true },
-  { id:3, name:'SCSI Mentorship Cohort Member', role:'Academic & Career Client', quote:'I was a final-year student with no clarity. After the Strategy Audit, I had a written plan with a 90-day execution map. My career trajectory completely changed.', approved:true },
+  { id:2, name:'Eze Supuruchi', role:'Public Speaking Program', quote:'The Public Speaking Mastery program was unlike anything I experienced in school. I learned the architecture of a message and now I can walk into any room and own it.', approved:true },
+  { id:3, name:'Atanda joseph', role:'Academic & Career Client', quote:'I was a final-year student with no clarity. After the Strategy Audit, I had a written plan with a 90-day execution map. My career trajectory completely changed.', approved:true },
   { id:4, name:'Chisom O.', role:'1-on-1 Coaching Client', quote:'Three months with Coach Precious rewired how I think about discipline, consistency, and self-worth. I am unrecognizable in the best way possible.', approved:true },
   { id:5, name:'Emmanuel A.', role:'Leadership Workshop Graduate', quote:'The SCSI workshop on "The Busy Trap" broke something open in me. I stopped being productive for show and started actually building results that matter.', approved:true },
 ]
@@ -63,7 +73,9 @@ export default function TestimonialsSection() {
               </p>
               {/* Author */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1.125rem', marginTop: 'auto' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--gold-dim)', border: '1px solid rgba(201,162,75,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>👤</div>
+                <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--gold-dim)', border: '1px solid rgba(201,162,75,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 700, color: 'var(--txt-1)', flexShrink: 0 }}>
+                  {getInitials(t.name)}
+                </div>
                 <div>
                   <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--txt-1)' }}>{t.name}</p>
                   <p style={{ fontSize: '0.72rem', color: 'var(--gold)' }}>{t.role}</p>

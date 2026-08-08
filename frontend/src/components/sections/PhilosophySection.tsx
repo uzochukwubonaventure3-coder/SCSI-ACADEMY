@@ -39,7 +39,9 @@ export default function PhilosophySection() {
                 "We are not a typical counseling center; we are a <span style={{ color: 'var(--gold)', fontStyle: 'normal', fontWeight: 700 }}>Refinery</span>. We take raw potential and refine it into the structured authority of a Balanced Giant."
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--gold-dim)', border: '1px solid rgba(201,162,75,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>👤</div>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', background: 'var(--gold-dim)', border: '1px solid rgba(201,162,75,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <img src="/coach-photo.jpg" alt="Coach Precious" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                </div>
                 <div>
                   <p style={{ fontWeight: 700, fontSize: '0.875rem' }}>Eze Tochukwu Precious</p>
                   <p style={{ fontSize: '0.72rem', color: 'var(--gold)', letterSpacing: '0.08em' }}>Founder, SCSI Academy</p>
